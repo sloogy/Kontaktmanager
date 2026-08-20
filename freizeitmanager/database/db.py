@@ -34,18 +34,23 @@ DEFAULT_SETTINGS: dict[str, str] = {
     "focus.energy_state": "normal",
     "focus.energy_state_date": "",
     "ui.mode": "simple",
+    "ui.language": "de",
     "bridge.enabled": "1",
 }
 
+# Beziehungsgrade und Gruppen sind Nutzerdaten: Sie werden einmalig in der
+# aktiven Sprache angelegt und danach nicht mehr angefasst. Sie spaeter
+# mitzuuebersetzen waere falsch - der Nutzer darf sie umbenennen.
 DEFAULT_LEVELS: list[tuple[str, int, int, int]] = [
-    # name, sort_order, default_interval_days, default_importance
-    ("Familie", 10, 21, 5),
-    ("Enger Freund", 20, 21, 5),
-    ("Freund", 30, 45, 4),
-    ("Bekannter", 40, 120, 2),
+    # Uebersetzungsschluessel, sort_order, default_interval_days, default_importance
+    ("seed.level_family", 10, 21, 5),
+    ("seed.level_close_friend", 20, 21, 5),
+    ("seed.level_friend", 30, 45, 4),
+    ("seed.level_acquaintance", 40, 120, 2),
 ]
 
-DEFAULT_GROUPS = ["Familie", "Freunde", "Arbeit", "Unbekannt"]
+DEFAULT_GROUPS = ["seed.group_family", "seed.group_friends",
+                  "seed.group_work", "seed.group_unknown"]
 
 
 def get_engine():
@@ -109,19 +114,21 @@ def _seed_settings(s: Session) -> None:
 
 
 def _seed_levels(s: Session) -> None:
+    from freizeitmanager.i18n.translator import t
     if s.scalar(select(RelationshipLevel).limit(1)) is not None:
         return
-    for name, order, interval, importance in DEFAULT_LEVELS:
-        s.add(RelationshipLevel(name=name, sort_order=order,
+    for key, order, interval, importance in DEFAULT_LEVELS:
+        s.add(RelationshipLevel(name=t(key), sort_order=order,
                                 default_interval_days=interval,
                                 default_importance=importance))
 
 
 def _seed_groups(s: Session) -> None:
+    from freizeitmanager.i18n.translator import t
     if s.scalar(select(Group).limit(1)) is not None:
         return
-    for idx, name in enumerate(DEFAULT_GROUPS):
-        s.add(Group(name=name, sort_order=idx * 10))
+    for idx, key in enumerate(DEFAULT_GROUPS):
+        s.add(Group(name=t(key), sort_order=idx * 10))
 
 
 # ── Einstellungen ─────────────────────────────────────────────────────────────

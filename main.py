@@ -89,9 +89,21 @@ def _smoke() -> int:
         for page in ("contacts", "settings", "cockpit"):
             window.show_page(page)
             app.processEvents()
+        # Fehlt eine Sprachdatei im Paket, faellt set_language still auf
+        # Deutsch zurueck - der Nutzer sieht dann einfach die falsche Sprache.
+        # Deshalb wird hier die Datei selbst geprueft, nicht das Ergebnis von
+        # t(): ein Vergleich auf den Schluessel wuerde den Fehler nie sehen.
+        from freizeitmanager.i18n.translator import LANGUAGES, locale_dir
+        missing = [code for code in LANGUAGES
+                   if not (locale_dir() / f"{code}.json").is_file()]
+        if missing:
+            _say(f"FEHLER: Sprachdateien fehlen im Paket: {', '.join(missing)}")
+            return 1
+
         window.close()
         db.reset_engine()
-    _say(f"{APP_NAME} {APP_VERSION}: Selbsttest bestanden.")
+    from freizeitmanager.i18n.translator import t
+    _say(t("app.smoke_ok", app=APP_NAME, version=APP_VERSION))
     return 0
 
 
@@ -105,7 +117,9 @@ def main() -> int:
     _setup_logging()
     _log.info("%s %s startet (%s)", APP_NAME, APP_VERSION,
               "LifePlanner-Modul" if paths.is_hosted() else "eigenstaendig")
+    from freizeitmanager.i18n.translator import load_language_from_settings
     db.initialize_database()
+    load_language_from_settings()
     _import_legacy_once()
     bridge.emit_event("module.started", {"version": APP_VERSION})
 

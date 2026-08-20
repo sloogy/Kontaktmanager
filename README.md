@@ -18,7 +18,8 @@ sondern **„was wäre jetzt eine gute, realistische Aktion für mich?"**
 | LifePlanner-Bridge + Legacy-Import (`integration/`) | fertig |
 | Qt-Oberfläche: Cockpit, Kontakte, Rotation, Einstellungen | fertig |
 | Release-Pipeline: CI, Build, `.lpmodule`, Verifizierer | fertig |
-| Tests | 49, grün (UI- und Paketierungstests inbegriffen) |
+| Sprachen: Deutsch, Englisch, Französisch | fertig |
+| Tests | 68, grün (UI-, Dialog-, Paketierungs- und i18n-Tests) |
 | Hobbys / Aktivitäten (0.2) | offen |
 | Kalenderzugriff (0.3) | architektonisch vorgesehen, nicht gebaut |
 
@@ -124,6 +125,9 @@ freizeitmanager/
 │   ├── rotation_engine.py       Score, Begründung, Fairness, Snooze
 │   ├── contact_service.py       Kontakte, Interaktionen, Termine, Quick Actions
 │   └── dashboard_service.py     Fokus-Cockpit, Reroll, Energiezustand
+├── i18n/
+│   ├── translator.py            t(), Sprachwahl, Datum und Wochentage
+│   └── de.json / en.json / fr.json
 ├── integration/
 │   ├── lifeplanner_bridge.py    JSONL-Outbox nach lifeplanner.module.v1
 │   └── legacy_import.py         Übernahme aus termine.db

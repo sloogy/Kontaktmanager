@@ -37,34 +37,32 @@ from freizeitmanager.database.models import (
     STATUS_NO_ROTATION,
     STATUS_PAUSED,
 )
+from freizeitmanager.i18n.translator import t
 
-KIND_LABELS = [
-    (KIND_MEET, "Treffen"),
-    (KIND_MEET_LONG, "Langer gemeinsamer Tag"),
-    (KIND_CALL, "Kurzes Telefonat"),
-    (KIND_CALL_LONG, "Langes Gespr\N{LATIN SMALL LETTER A WITH DIAERESIS}ch / Video"),
-    (KIND_CHAT, "L\N{LATIN SMALL LETTER A WITH DIAERESIS}ngerer Chat"),
-    (KIND_MESSAGE, "Nachricht"),
-    (KIND_REACTION, "Reaktion / Emoji"),
-]
+# Auswahllisten werden ueber Schluessel gefuehrt und erst beim Aufbau des
+# Dialogs uebersetzt - so wirkt ein Sprachwechsel sofort.
+KIND_ORDER = (KIND_MEET, KIND_MEET_LONG, KIND_CALL, KIND_CALL_LONG,
+              KIND_CHAT, KIND_MESSAGE, KIND_REACTION)
+QUALITY_ORDER = (QUALITY_SHORT, QUALITY_NORMAL, QUALITY_INTENSE)
+STATUS_ORDER = (STATUS_ACTIVE, STATUS_LOW, STATUS_NO_ROTATION, STATUS_PAUSED, STATUS_ARCHIVED)
+IMPORTANCE_ORDER = (5, 4, 3, 2, 1)
 
-QUALITY_LABELS = [(QUALITY_SHORT, "kurz"), (QUALITY_NORMAL, "normal"), (QUALITY_INTENSE, "intensiv")]
 
-STATUS_LABELS = [
-    (STATUS_ACTIVE, "Aktiv"),
-    (STATUS_LOW, "Gerade weniger Kontakt"),
-    (STATUS_NO_ROTATION, "Nicht in der Rotation"),
-    (STATUS_PAUSED, "Pausiert"),
-    (STATUS_ARCHIVED, "Archiviert"),
-]
+def kind_choices(limit: int | None = None) -> list[tuple[str, str]]:
+    values = KIND_ORDER[:limit] if limit else KIND_ORDER
+    return [(value, t(f"interaction.{value}")) for value in values]
 
-IMPORTANCE_LABELS = [
-    (5, "A \N{EN DASH} engster Mensch"),
-    (4, "B \N{EN DASH} wichtiger Freund"),
-    (3, "C \N{EN DASH} Freund"),
-    (2, "D \N{EN DASH} Bekannter"),
-    (1, "E \N{EN DASH} lose Bekanntschaft"),
-]
+
+def quality_choices() -> list[tuple[str, str]]:
+    return [(value, t(f"interaction.quality_{value}")) for value in QUALITY_ORDER]
+
+
+def status_choices() -> list[tuple[str, str]]:
+    return [(value, t(f"status.{value}")) for value in STATUS_ORDER]
+
+
+def importance_choices() -> list[tuple[int, str]]:
+    return [(value, t(f"importance.{value}")) for value in IMPORTANCE_ORDER]
 
 
 def _fill(combo: QComboBox, pairs, current=None) -> None:
@@ -81,31 +79,31 @@ class LogInteractionDialog(QDialog):
 
     def __init__(self, contact_name: str, kind: str = KIND_MEET, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(f"Kontakt eintragen \N{EN DASH} {contact_name}")
+        self.setWindowTitle(t("interaction.title", name=contact_name))
         self.setMinimumWidth(400)
         form = QFormLayout(self)
 
         self.kind = QComboBox()
-        _fill(self.kind, KIND_LABELS, kind)
+        _fill(self.kind, kind_choices(), kind)
         self.when = QDateEdit(QDate.currentDate())
         self.when.setCalendarPopup(True)
         self.when.setDisplayFormat("dd.MM.yyyy")
         self.when.setMaximumDate(QDate.currentDate())
         self.quality = QComboBox()
-        _fill(self.quality, QUALITY_LABELS, QUALITY_NORMAL)
+        _fill(self.quality, quality_choices(), QUALITY_NORMAL)
         self.duration = QSpinBox()
         self.duration.setRange(0, 1440)
         self.duration.setSingleStep(15)
-        self.duration.setSuffix(" min")
-        self.duration.setSpecialValueText("nicht angeben")
+        self.duration.setSuffix(t("interaction.duration_suffix"))
+        self.duration.setSpecialValueText(t("interaction.duration_none"))
         self.note = QLineEdit()
-        self.note.setPlaceholderText("optional")
+        self.note.setPlaceholderText(t("common.optional"))
 
-        form.addRow("Art", self.kind)
-        form.addRow("Wann", self.when)
-        form.addRow("Intensit\N{LATIN SMALL LETTER A WITH DIAERESIS}t", self.quality)
-        form.addRow("Dauer", self.duration)
-        form.addRow("Notiz", self.note)
+        form.addRow(t("interaction.kind"), self.kind)
+        form.addRow(t("interaction.when"), self.when)
+        form.addRow(t("interaction.quality"), self.quality)
+        form.addRow(t("interaction.duration"), self.duration)
+        form.addRow(t("interaction.note"), self.note)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok |
                                    QDialogButtonBox.StandardButton.Cancel)
@@ -129,27 +127,27 @@ class PlanActivityDialog(QDialog):
     def __init__(self, contacts: list[tuple[int, str]], preselect: set[int] | None = None,
                  parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Treffen planen")
+        self.setWindowTitle(t("activity.title"))
         self.setMinimumWidth(430)
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
-        self.title = QLineEdit("Treffen")
+        self.title = QLineEdit(t("activity.default_title"))
         self.when = QDateEdit(QDate.currentDate().addDays(3))
         self.when.setCalendarPopup(True)
         self.when.setDisplayFormat("dd.MM.yyyy")
         self.when.setMinimumDate(QDate.currentDate())
         self.start = QLineEdit()
-        self.start.setPlaceholderText("z.B. 18:30 (optional)")
+        self.start.setPlaceholderText(t("activity.time_placeholder"))
         self.kind = QComboBox()
-        _fill(self.kind, KIND_LABELS[:4], KIND_MEET)
-        form.addRow("Titel", self.title)
-        form.addRow("Datum", self.when)
-        form.addRow("Uhrzeit", self.start)
-        form.addRow("Art", self.kind)
+        _fill(self.kind, kind_choices(limit=4), KIND_MEET)
+        form.addRow(t("activity.name"), self.title)
+        form.addRow(t("activity.date"), self.when)
+        form.addRow(t("activity.time"), self.start)
+        form.addRow(t("activity.kind"), self.kind)
         layout.addLayout(form)
 
-        layout.addWidget(QLabel("Wer ist dabei?"))
+        layout.addWidget(QLabel(t("activity.participants")))
         self.people = QListWidget()
         self.people.setSelectionMode(QListWidget.SelectionMode.NoSelection)
         self.people.setMaximumHeight(180)
@@ -176,7 +174,7 @@ class PlanActivityDialog(QDialog):
                 chosen.append(int(item.data(Qt.ItemDataRole.UserRole)))
         raw_time = self.start.text().strip()
         return {
-            "title": self.title.text().strip() or "Treffen",
+            "title": self.title.text().strip() or t("activity.default_title"),
             "planned_date": self.when.date().toPython(),
             "kind": self.kind.currentData(),
             "start_time": raw_time or None,
@@ -194,14 +192,14 @@ class ContactDialog(QDialog):
     def __init__(self, levels: list[str], groups: list[str],
                  contact=None, tags: list[str] | None = None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Kontakt bearbeiten" if contact else "Neuer Kontakt")
+        self.setWindowTitle(t("contact.edit_title") if contact else t("contact.new_title"))
         self.setMinimumWidth(470)
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
         self.name = QLineEdit(contact.name if contact else "")
         self.level = QComboBox()
-        self.level.addItem("\N{EM DASH}", None)
+        self.level.addItem(t("common.none"), None)
         for name in levels:
             self.level.addItem(name, name)
         if contact is not None and contact.level is not None:
@@ -210,33 +208,33 @@ class ContactDialog(QDialog):
                 self.level.setCurrentIndex(index)
 
         self.importance = QComboBox()
-        _fill(self.importance, IMPORTANCE_LABELS, contact.importance if contact else 3)
+        _fill(self.importance, importance_choices(), contact.importance if contact else 3)
 
         self.interval = QSpinBox()
         self.interval.setRange(1, 730)
-        self.interval.setSuffix(" Tage")
+        self.interval.setSuffix(t("contact.interval_suffix"))
         self.interval.setValue(contact.target_interval_days if contact else 30)
         self.flex = QSpinBox()
         self.flex.setRange(0, 180)
-        self.flex.setSuffix(" Tage")
+        self.flex.setSuffix(t("contact.interval_suffix"))
         self.flex.setValue(contact.interval_flex_days if contact else 7)
 
         self.status = QComboBox()
-        _fill(self.status, STATUS_LABELS, contact.status if contact else STATUS_ACTIVE)
+        _fill(self.status, status_choices(), contact.status if contact else STATUS_ACTIVE)
 
-        form.addRow("Name", self.name)
-        form.addRow("Beziehungsgrad", self.level)
-        form.addRow("Wichtigkeit", self.importance)
-        form.addRow("Kontakt alle", self.interval)
-        form.addRow("Toleranz", self.flex)
-        form.addRow("Status", self.status)
+        form.addRow(t("contact.name"), self.name)
+        form.addRow(t("contact.level"), self.level)
+        form.addRow(t("contact.importance"), self.importance)
+        form.addRow(t("contact.interval"), self.interval)
+        form.addRow(t("contact.flex"), self.flex)
+        form.addRow(t("contact.status"), self.status)
         layout.addLayout(form)
 
-        channels = QGroupBox("Wie ist Kontakt willkommen?")
+        channels = QGroupBox(t("contact.channels"))
         row = QHBoxLayout(channels)
-        self.wants_meeting = QCheckBox("Treffen")
-        self.wants_call = QCheckBox("Telefon")
-        self.wants_message = QCheckBox("Nachrichten")
+        self.wants_meeting = QCheckBox(t("contact.wants_meeting"))
+        self.wants_call = QCheckBox(t("contact.wants_call"))
+        self.wants_message = QCheckBox(t("contact.wants_message"))
         for box, attr in ((self.wants_meeting, "wants_meeting"),
                           (self.wants_call, "wants_call"),
                           (self.wants_message, "wants_message")):
@@ -244,10 +242,10 @@ class ContactDialog(QDialog):
             row.addWidget(box)
         layout.addWidget(channels)
 
-        timing = QGroupBox("Wann passt es meistens?")
+        timing = QGroupBox(t("contact.timing"))
         trow = QHBoxLayout(timing)
-        self.prefers_weekday = QCheckBox("Werktags")
-        self.prefers_weekend = QCheckBox("Wochenende")
+        self.prefers_weekday = QCheckBox(t("contact.weekday"))
+        self.prefers_weekend = QCheckBox(t("contact.weekend"))
         for box, attr in ((self.prefers_weekday, "prefers_weekday"),
                           (self.prefers_weekend, "prefers_weekend")):
             box.setChecked(getattr(contact, attr) if contact else True)
@@ -263,17 +261,17 @@ class ContactDialog(QDialog):
             item.setCheckState(Qt.CheckState.Checked if name in current_groups
                                else Qt.CheckState.Unchecked)
             self.groups.addItem(item)
-        layout.addWidget(QLabel("Gruppen"))
+        layout.addWidget(QLabel(t("contact.groups")))
         layout.addWidget(self.groups)
 
         self.tags = QLineEdit(", ".join(t.name for t in contact.tags) if contact else "")
-        self.tags.setPlaceholderText("Brettspiele, Essen, spontan \N{EM DASH} durch Komma getrennt")
-        layout.addWidget(QLabel("Tags"))
+        self.tags.setPlaceholderText(t("contact.tags_placeholder"))
+        layout.addWidget(QLabel(t("contact.tags")))
         layout.addWidget(self.tags)
 
         self.notes = QTextEdit(contact.notes or "" if contact else "")
         self.notes.setMaximumHeight(80)
-        layout.addWidget(QLabel("Notizen"))
+        layout.addWidget(QLabel(t("contact.notes")))
         layout.addWidget(self.notes)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok |

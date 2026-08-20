@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from freizeitmanager.i18n.translator import t
 from freizeitmanager.logic import rotation_engine as rot
 from freizeitmanager.ui import theme
 
@@ -22,14 +23,14 @@ from freizeitmanager.ui import theme
 # Bewusst ohne Piktogramme: Symbole ausserhalb der Basisebene erscheinen je
 # nach Systemschrift als leere Luecke. Die Karten tragen ihre Bedeutung im
 # Text und im farbigen Ampelpunkt - das funktioniert auf jedem System.
-DONE_LABELS = {
-    rot.SUGGESTION_MEET: "Getroffen",
-    rot.SUGGESTION_CALL: "Angerufen",
-    rot.SUGGESTION_MESSAGE: "Geschrieben",
+DONE_KEYS = {
+    rot.SUGGESTION_MEET: "step.done_meet",
+    rot.SUGGESTION_CALL: "step.done_call",
+    rot.SUGGESTION_MESSAGE: "step.done_message",
 }
 
-SNOOZE_OPTIONS = [("Diese Woche nicht", 7), ("Zwei Wochen Ruhe", 14),
-                  ("Einen Monat pausieren", 30)]
+SNOOZE_OPTIONS = [("step.snooze_week", 7), ("step.snooze_two_weeks", 14),
+                  ("step.snooze_month", 30)]
 
 
 class FocusTile(QFrame):
@@ -142,7 +143,7 @@ class NextStepCard(QFrame):
         dot.setStyleSheet(f"color: {accent}; border: none;")
         name = QLabel(candidate.name)
         name.setObjectName("stepName")
-        urgency = QLabel(rot.URGENCY_LABELS[candidate.urgency])
+        urgency = QLabel(candidate.urgency_text)
         urgency.setObjectName("stepUrgency")
         head.addWidget(dot)
         head.addWidget(name)
@@ -155,20 +156,21 @@ class NextStepCard(QFrame):
         suggestion.setObjectName("stepSuggestion")
         outer.addWidget(suggestion)
 
-        gap = QLabel(f"zuletzt {candidate.gap_text}")
+        gap = QLabel(t("step.last_contact", gap=candidate.gap_text))
         gap.setObjectName("stepGap")
         outer.addWidget(gap)
 
-        self._why_button = QPushButton("Warum?")
+        self._why_button = QPushButton(t("step.why"))
         self._why_button.setObjectName("whyToggle")
         self._why_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._why_button.clicked.connect(self._toggle_why)
         outer.addWidget(self._why_button, 0, Qt.AlignmentFlag.AlignLeft)
 
-        reasons = "\n".join(f"\N{BULLET} {r}" for r in candidate.why())
+        reasons = "\n".join(f"\N{BULLET} {reason}" for reason in candidate.why())
         if expert and candidate.breakdown:
-            parts = ", ".join(f"{k} {v:g}" for k, v in candidate.breakdown.items() if v)
-            reasons += f"\n\N{BULLET} intern: {candidate.score:g} ({parts})"
+            parts = ", ".join(f"{t('score.' + key)} {value:g}"
+                              for key, value in candidate.breakdown.items() if value)
+            reasons += "\n\N{BULLET} " + t("step.internal", score=f"{candidate.score:g}", parts=parts)
         self._why_label = QLabel(reasons)
         self._why_label.setObjectName("stepWhy")
         self._why_label.setWordWrap(True)
@@ -179,19 +181,19 @@ class NextStepCard(QFrame):
         actions.setSpacing(8)
         cid = candidate.contact_id
 
-        done_btn = QPushButton(DONE_LABELS[candidate.suggestion])
+        done_btn = QPushButton(t(DONE_KEYS[candidate.suggestion]))
         done_btn.setStyleSheet(theme.BTN_SUCCESS)
         done_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        done_btn.setToolTip("Kontakt sofort eintragen - ohne Rueckfrage")
+        done_btn.setToolTip(t("step.done_tooltip"))
         done_btn.clicked.connect(
             lambda: self.done.emit(cid, rot.SUGGESTION_TO_KIND[candidate.suggestion]))
 
-        plan_btn = QPushButton("Planen")
+        plan_btn = QPushButton(t("step.plan"))
         plan_btn.setStyleSheet(theme.BTN_SECONDARY)
         plan_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         plan_btn.clicked.connect(lambda: self.plan.emit(cid))
 
-        later_btn = QPushButton("Sp\N{LATIN SMALL LETTER A WITH DIAERESIS}ter")
+        later_btn = QPushButton(t("step.later"))
         later_btn.setStyleSheet(theme.BTN_QUIET)
         later_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         later_btn.clicked.connect(lambda: self._later_menu(later_btn))
@@ -200,7 +202,7 @@ class NextStepCard(QFrame):
             actions.addWidget(button)
         actions.addStretch(1)
 
-        open_btn = QPushButton("\N{RIGHTWARDS ARROW} Kontakt")
+        open_btn = QPushButton(t("step.open_contact"))
         open_btn.setStyleSheet(theme.BTN_QUIET)
         open_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         open_btn.clicked.connect(lambda: self.opened.emit(cid))
@@ -210,13 +212,13 @@ class NextStepCard(QFrame):
     def _toggle_why(self) -> None:
         visible = not self._why_label.isVisible()
         self._why_label.setVisible(visible)
-        self._why_button.setText("Warum? \N{UPWARDS ARROW}" if visible else "Warum?")
+        self._why_button.setText(t("step.why_open") if visible else t("step.why"))
 
     def _later_menu(self, anchor: QPushButton) -> None:
         menu = QMenu(self)
-        actions = {menu.addAction(label): days for label, days in SNOOZE_OPTIONS}
+        actions = {menu.addAction(t(key)): days for key, days in SNOOZE_OPTIONS}
         menu.addSeparator()
-        wish_action = menu.addAction("Im Gegenteil: m\N{LATIN SMALL LETTER O WITH DIAERESIS}chte ich bald sehen")
+        wish_action = menu.addAction(t("step.wish"))
         chosen = menu.exec(anchor.mapToGlobal(anchor.rect().bottomLeft()))
         if chosen is None:
             return

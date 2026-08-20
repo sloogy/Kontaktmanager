@@ -92,8 +92,9 @@ def import_legacy(session: Session, legacy_db: Path) -> dict[str, int]:
             # "letztes_treffen" wird zur ersten Interaktion der Historie.
             last = _parse_date(row["letztes_treffen"])
             if last is not None:
+                from freizeitmanager.i18n.translator import t
                 log_interaction(session, contact.id, KIND_MEET, occurred_on=last,
-                                note="uebernommen aus Kontaktmanager")
+                                note=t("interaction.imported"))
                 stats["interactions"] += 1
 
     conn.close()

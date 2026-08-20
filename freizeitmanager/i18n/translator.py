@@ -9,7 +9,9 @@ Datumsformate gehoeren mit zur Sprache: ein englischsprachiger Nutzer erwartet
 """
 from __future__ import annotations
 
+import contextlib
 import json
+import sys
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -30,13 +32,27 @@ DATE_FORMATS: dict[str, str] = {
     "fr": "DD/MM/YYYY",
 }
 
-_LOCALE_DIR = Path(__file__).resolve().parent
+def locale_dir() -> Path:
+    """Ordner der Sprachdateien - im Quellbaum wie im gebauten Paket.
+
+    PyInstaller entpackt mitgelieferte Daten nach ``sys._MEIPASS``. Dort liegt
+    ``freizeitmanager/i18n`` neben dem Code, nicht darin.
+    """
+    bundle = getattr(sys, "_MEIPASS", "")
+    if bundle:
+        packed = Path(bundle) / "freizeitmanager" / "i18n"
+        if packed.is_dir():
+            return packed
+    return Path(__file__).resolve().parent
+
+
+_LOCALE_DIR = locale_dir()
 
 
 class Translator:
     """Singleton. Immer ueber ``instance()`` ansprechen."""
 
-    _instance: "Translator | None" = None
+    _instance: Translator | None = None
 
     def __init__(self) -> None:
         self._lang = FALLBACK_LANGUAGE
@@ -45,7 +61,7 @@ class Translator:
         self._data = dict(self._fallback)
 
     @classmethod
-    def instance(cls) -> "Translator":
+    def instance(cls) -> Translator:
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
@@ -98,10 +114,10 @@ class Translator:
             node = self._resolve(self._fallback, key)
         text = node if isinstance(node, str) else key
         if kwargs:
-            try:
+            # Ein fehlender Platzhalter darf die Oberflaeche nicht zerreissen:
+            # lieber der unformatierte Text als eine Ausnahme im Aufbau.
+            with contextlib.suppress(KeyError, IndexError, ValueError):
                 text = text.format(**kwargs)
-            except (KeyError, IndexError, ValueError):
-                pass
         return text
 
     def format_date(self, value: date | datetime | None) -> str:

@@ -27,6 +27,7 @@ from freizeitmanager.database.models import (
     Contact,
     RotationState,
 )
+from freizeitmanager.i18n.translator import t
 from freizeitmanager.logic import rule_engine
 from freizeitmanager.logic.freshness import FreshnessResult, InteractionFact, compute_freshness, describe_gap
 
@@ -43,12 +44,16 @@ URGENCY_SOON = "soon"          # diese Woche waere schoen
 URGENCY_DUE = "due"            # jetzt ein guter Zeitpunkt
 URGENCY_LONG = "long"          # schon lange still
 
-URGENCY_LABELS = {
-    URGENCY_FRESH: "alles gut",
-    URGENCY_SOON: "bald wieder",
-    URGENCY_DUE: "jetzt ein guter Zeitpunkt",
-    URGENCY_LONG: "schon lange still",
-}
+
+
+def urgency_label(urgency: str) -> str:
+    """Beschriftung der Dringlichkeit in der aktiven Sprache.
+
+    Bewusst eine Funktion statt eines Moduldicts: Ein Dict wird beim Import
+    ausgewertet und wuerde die Sprache einfrieren, die beim Programmstart
+    aktiv war. Ein Sprachwechsel zur Laufzeit haette dann keine Wirkung.
+    """
+    return t(f"urgency.{urgency}")
 # Bewusst ein einfacher Punkt statt farbiger Emoji-Kreise: U+1F7E0 und
 # Verwandte fehlen in vielen Systemschriften und erscheinen dann als Luecke.
 # Der Punkt uebernimmt stattdessen die Akzentfarbe der Karte.
@@ -64,11 +69,20 @@ SUGGESTION_MEET = "meet"
 SUGGESTION_CALL = "call"
 SUGGESTION_MESSAGE = "message"
 
-SUGGESTION_LABELS = {
-    SUGGESTION_MEET: ("\N{HOT BEVERAGE}", "Treffen vorschlagen", "ein paar Stunden"),
-    SUGGESTION_CALL: ("\N{BLACK TELEPHONE}", "Anrufen", "10-20 Minuten"),
-    SUGGESTION_MESSAGE: ("\N{ENVELOPE}", "Nachricht schreiben", "2 Minuten"),
+# Symbole bleiben unuebersetzt - sie sind sprachneutral.
+SUGGESTION_ICONS = {
+    SUGGESTION_MEET: "\N{HOT BEVERAGE}",
+    SUGGESTION_CALL: "\N{BLACK TELEPHONE}",
+    SUGGESTION_MESSAGE: "\N{ENVELOPE}",
 }
+
+
+def suggestion_label(suggestion: str) -> str:
+    return t(f"suggestion.{suggestion}")
+
+
+def suggestion_effort(suggestion: str) -> str:
+    return t(f"suggestion.{suggestion}_effort")
 
 SUGGESTION_TO_KIND = {
     SUGGESTION_MEET: KIND_MEET,
@@ -97,7 +111,7 @@ class Candidate:
     urgency: str
     suggestion: str
     freshness: FreshnessResult
-    reasons: list[str] = field(default_factory=list)
+    reasons: list[tuple[str, dict]] = field(default_factory=list)
     breakdown: dict[str, float] = field(default_factory=dict)
     blocks: list[str] = field(default_factory=list)
     planned_on: date | None = None
@@ -112,22 +126,31 @@ class Candidate:
 
     @property
     def suggestion_icon(self) -> str:
-        return SUGGESTION_LABELS[self.suggestion][0]
+        return SUGGESTION_ICONS[self.suggestion]
 
     @property
     def suggestion_text(self) -> str:
-        return SUGGESTION_LABELS[self.suggestion][1]
+        return suggestion_label(self.suggestion)
 
     @property
     def suggestion_effort(self) -> str:
-        return SUGGESTION_LABELS[self.suggestion][2]
+        return suggestion_effort(self.suggestion)
+
+    @property
+    def urgency_text(self) -> str:
+        return urgency_label(self.urgency)
 
     def headline(self) -> str:
-        return f"{self.icon} {self.name} \N{MIDDLE DOT} {URGENCY_LABELS[self.urgency]}"
+        return f"{self.icon} {self.name} \N{MIDDLE DOT} {self.urgency_text}"
 
     def why(self) -> list[str]:
-        """Lesbare Begruendung fuer den Aufklapp-Bereich."""
-        return list(self.reasons)
+        """Lesbare Begruendung fuer den Aufklapp-Bereich.
+
+        Die Gruende werden als (Schluessel, Parameter) gespeichert und erst
+        hier uebersetzt. So bleibt eine bereits berechnete Bewertung nach
+        einem Sprachwechsel korrekt, ohne neu gerechnet zu werden.
+        """
+        return [t(key, **params) for key, params in self.reasons]
 
 
 def _facts(contact: Contact) -> list[InteractionFact]:
@@ -176,17 +199,18 @@ def _neglect_points(freshness: FreshnessResult, target: int) -> float:
 
 
 def _context_points(contact: Contact, suggestion: str, energy: str,
-                    capacity: rule_engine.CapacityState, today: date) -> tuple[float, list[str]]:
+                    capacity: rule_engine.CapacityState,
+                    today: date) -> tuple[float, list[tuple[str, dict]]]:
     """Passt der Vorschlag zur aktuellen Lage?"""
     points = 0.0
-    notes: list[str] = []
+    notes: list[tuple[str, dict]] = []
 
     if energy == ENERGY_LOW and suggestion in (SUGGESTION_CALL, SUGGESTION_MESSAGE):
         points += 6.0
-        notes.append("passt zu wenig Energie")
+        notes.append(("reason.fits_low_energy", {}))
     elif energy == ENERGY_SOCIAL and suggestion == SUGGESTION_MEET:
         points += 6.0
-        notes.append("du hast Lust auf Leute")
+        notes.append(("reason.fits_social", {}))
     elif energy == ENERGY_NORMAL:
         points += 3.0
 
@@ -196,7 +220,7 @@ def _context_points(contact: Contact, suggestion: str, energy: str,
     is_weekend = today.weekday() >= 5
     if is_weekend and contact.prefers_weekend:
         points += 4.0
-        notes.append("Wochenende passt")
+        notes.append(("reason.weekend_fits", {}))
     elif not is_weekend and contact.prefers_weekday:
         points += 4.0
 
@@ -227,14 +251,14 @@ def _wish_points(contact: Contact, today: date) -> float:
 
 
 def _pick_suggestion(contact: Contact, freshness: FreshnessResult, energy: str,
-                     capacity: rule_engine.CapacityState) -> tuple[str, list[str]]:
+                     capacity: rule_engine.CapacityState) -> tuple[str, list[tuple[str, dict]]]:
     """Waehlt den kleinsten Schritt, der der Lage angemessen ist."""
-    notes: list[str] = []
+    notes: list[tuple[str, dict]] = []
     meeting_possible = contact.wants_meeting and capacity.allows_meetings and energy != ENERGY_LOW
     if not capacity.allows_meetings and contact.wants_meeting:
-        notes.append("Wochenbudget voll - kleinerer Schritt")
+        notes.append(("reason.week_full", {}))
     if energy == ENERGY_LOW:
-        notes.append("heute wenig Energie")
+        notes.append(("reason.low_energy_today", {}))
 
     if meeting_possible and (freshness.overdue_ratio >= 1.3 or energy == ENERGY_SOCIAL):
         return SUGGESTION_MEET, notes
@@ -263,47 +287,52 @@ def evaluate_contact(session: Session, contact: Contact,
     verdict = rule_engine.check_contact(session, contact, capacity, today)
     suggestion, ctx_notes = _pick_suggestion(contact, fresh, energy, capacity)
 
-    reasons: list[str] = []
+    # Gruende werden als (Schluessel, Parameter) gefuehrt und erst beim
+    # Anzeigen uebersetzt - siehe Candidate.why().
+    reasons: list[tuple[str, dict]] = []
     breakdown: dict[str, float] = {}
 
     due = _due_points(fresh.overdue_ratio, flex_ratio, contact.importance)
-    breakdown["Faelligkeit"] = round(due, 1)
+    breakdown["due"] = round(due, 1)
     if due > 0:
-        reasons.append(f"gewuenschter Rhythmus alle {target} Tage, letzter Kontakt {describe_gap(fresh)}")
+        reasons.append(("reason.rhythm", {"days": target, "gap": describe_gap(fresh)}))
 
     importance = W_IMPORTANCE * (max(1, min(5, contact.importance)) - 1) / 4.0
-    breakdown["Wichtigkeit"] = round(importance, 1)
+    breakdown["importance"] = round(importance, 1)
     if contact.importance >= 4:
-        reasons.append("wichtiger Mensch fuer dich")
+        reasons.append(("reason.important", {}))
 
     neglect = _neglect_points(fresh, target)
-    breakdown["Funkstille"] = round(neglect, 1)
+    breakdown["neglect"] = round(neglect, 1)
     if neglect >= 5:
-        reasons.append("deutlich laenger still als sonst")
+        reasons.append(("reason.long_silence", {}))
 
     context, ctx_reasons = _context_points(contact, suggestion, energy, capacity, today)
-    breakdown["Kontext"] = round(context, 1)
+    breakdown["context"] = round(context, 1)
     reasons.extend(ctx_reasons)
     reasons.extend(ctx_notes)
 
     state = session.get(RotationState, contact.id)
     fair_bonus, fair_penalty = _fairness_points(state, today)
-    breakdown["Rotation"] = round(fair_bonus - fair_penalty, 1)
+    breakdown["rotation"] = round(fair_bonus - fair_penalty, 1)
     if state is None or state.last_suggested_on is None:
-        reasons.append("war noch nie im Fokus")
+        reasons.append(("reason.never_focused", {}))
 
     wish = _wish_points(contact, today)
-    breakdown["Wunsch"] = round(wish, 1)
+    breakdown["wish"] = round(wish, 1)
     if wish > 0:
-        reasons.append("von dir als 'bald wieder' markiert")
+        reasons.append(("reason.wished", {}))
 
     score = due + importance + neglect + context + fair_bonus + wish - fair_penalty
 
     if verdict.blocks:
         score = 0.0
-        reasons = verdict.labels()
+        reasons = [(f"block.{block}", {}) for block in verdict.blocks]
         if verdict.planned_activity is not None:
-            reasons = [f"Termin am {verdict.planned_activity.planned_date.strftime('%d.%m.')}"] + reasons[1:]
+            from freizeitmanager.i18n.translator import format_short_date
+            reasons = [("reason.planned_on",
+                        {"date": format_short_date(verdict.planned_activity.planned_date)})
+                       ] + reasons[1:]
 
     return Candidate(
         contact_id=contact.id,

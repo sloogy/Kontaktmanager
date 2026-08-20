@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 
 from freizeitmanager.database import db
 from freizeitmanager.database.models import Contact
+from freizeitmanager.i18n.translator import t
 from freizeitmanager.integration import lifeplanner_bridge as bridge
 from freizeitmanager.logic import contact_service as cs
 from freizeitmanager.logic import dashboard_service as dash
@@ -34,17 +35,18 @@ from freizeitmanager.ui import theme
 from freizeitmanager.ui.common import CalmCard, FocusTile, NextStepCard
 from freizeitmanager.ui.dialogs import PlanActivityDialog
 
+# Schluessel statt Text - die Beschriftung entsteht erst beim Aufbau.
 TILE_SPECS = [
-    ("due_now", "Jetzt passend", theme.ACCENT_DUE),
-    ("this_week", "Diese Woche", theme.ACCENT_SOON),
-    ("planned", "Geplant", theme.ACCENT_PLANNED),
-    ("all_good", "Alles gut", theme.ACCENT_FRESH),
+    ("due_now", "cockpit.tile_due", theme.ACCENT_DUE),
+    ("this_week", "cockpit.tile_week", theme.ACCENT_SOON),
+    ("planned", "cockpit.tile_planned", theme.ACCENT_PLANNED),
+    ("all_good", "cockpit.tile_good", theme.ACCENT_FRESH),
 ]
 
 ENERGY_SPECS = [
-    (rot.ENERGY_LOW, "wenig Energie"),
-    (rot.ENERGY_NORMAL, "normal"),
-    (rot.ENERGY_SOCIAL, "Lust auf Leute"),
+    (rot.ENERGY_LOW, "cockpit.energy_low"),
+    (rot.ENERGY_NORMAL, "cockpit.energy_normal"),
+    (rot.ENERGY_SOCIAL, "cockpit.energy_social"),
 ]
 
 
@@ -81,7 +83,7 @@ class DashboardWidget(QWidget):
         header = QHBoxLayout()
         titles = QVBoxLayout()
         titles.setSpacing(2)
-        title = QLabel("Heute")
+        title = QLabel(t("cockpit.title"))
         title.setObjectName("pageTitle")
         self._hint = QLabel("")
         self._hint.setObjectName("pageHint")
@@ -94,7 +96,7 @@ class DashboardWidget(QWidget):
 
         self._tiles_grid = QGridLayout()
         self._tiles_grid.setSpacing(12)
-        self._tiles = [FocusTile(key, label, accent) for key, label, accent in TILE_SPECS]
+        self._tiles = [FocusTile(key, t(label_key), accent) for key, label_key, accent in TILE_SPECS]
         for tile in self._tiles:
             tile.double_clicked.connect(self._tile_opened)
             tile.clicked.connect(self._tile_opened)
@@ -106,10 +108,10 @@ class DashboardWidget(QWidget):
         layout.addWidget(self._capacity_label)
 
         steps_head = QHBoxLayout()
-        steps_title = QLabel("Meine n\N{LATIN SMALL LETTER A WITH DIAERESIS}chsten Schritte")
+        steps_title = QLabel(t("cockpit.next_steps"))
         steps_title.setObjectName("pageTitle")
         steps_title.setStyleSheet("font-size: 16px;")
-        self._reroll_button = QPushButton("Andere Vorschl\N{LATIN SMALL LETTER A WITH DIAERESIS}ge")
+        self._reroll_button = QPushButton(t("cockpit.reroll"))
         self._reroll_button.setStyleSheet(theme.BTN_QUIET)
         self._reroll_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._reroll_button.clicked.connect(self._reroll)
@@ -122,7 +124,7 @@ class DashboardWidget(QWidget):
         self._steps_box.setSpacing(10)
         layout.addLayout(self._steps_box)
 
-        self._planned_group = QGroupBox("Geplant")
+        self._planned_group = QGroupBox(t("cockpit.planned"))
         self._planned_layout = QVBoxLayout(self._planned_group)
         self._planned_layout.setContentsMargins(14, 8, 14, 12)
         layout.addWidget(self._planned_group)
@@ -132,13 +134,13 @@ class DashboardWidget(QWidget):
     def _build_energy_chips(self) -> QHBoxLayout:
         row = QHBoxLayout()
         row.setSpacing(6)
-        caption = QLabel("Heute habe ich")
+        caption = QLabel(t("cockpit.energy_prompt"))
         caption.setObjectName("pageHint")
         row.addWidget(caption)
         self._energy_group = QButtonGroup(self)
         self._energy_group.setExclusive(True)
-        for value, label in ENERGY_SPECS:
-            button = QPushButton(label)
+        for value, label_key in ENERGY_SPECS:
+            button = QPushButton(t(label_key))
             button.setObjectName("energyButton")
             button.setCheckable(True)
             button.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -165,14 +167,17 @@ class DashboardWidget(QWidget):
 
         values = {"due_now": summary.due_now, "this_week": summary.this_week,
                   "planned": summary.planned, "all_good": summary.all_good}
-        details = {"due_now": "ein guter Zeitpunkt", "this_week": "waere bald schoen",
-                   "planned": "Termin steht", "all_good": f"+ {summary.resting} ruhen"}
+        details = {"due_now": t("cockpit.tile_due_detail"),
+                   "this_week": t("cockpit.tile_week_detail"),
+                   "planned": t("cockpit.tile_planned_detail"),
+                   "all_good": t("cockpit.tile_good_detail", count=summary.resting)}
         for tile in self._tiles:
             tile.set_value(values.get(tile.key, 0), details.get(tile.key, ""))
 
-        self._hint.setText(cockpit.message or "")
+        self._hint.setText(t(cockpit.message) if cockpit.message else "")
         notes = summary.capacity_notes
-        self._capacity_label.setText("Hinweis: " + " \N{MIDDLE DOT} ".join(notes) if notes else "")
+        self._capacity_label.setText(
+            t("common.hint", text=" \N{MIDDLE DOT} ".join(notes)) if notes else "")
         self._capacity_label.setVisible(bool(notes))
 
         self._clear_layout(self._steps_box)
@@ -188,9 +193,8 @@ class DashboardWidget(QWidget):
                 self._steps_box.addWidget(card)
                 self._cards.append(card)
         else:
-            message = dash.CALM_MESSAGE if summary.is_calm else \
-                "Fuer heute ist alles abgehakt. Morgen gibt es neue Vorschlaege."
-            self._steps_box.addWidget(CalmCard(message))
+            key = dash.CALM_MESSAGE if summary.is_calm else "cockpit.all_done"
+            self._steps_box.addWidget(CalmCard(t(key)))
         self._reroll_button.setVisible(bool(cockpit.next_steps))
 
         self._clear_layout(self._planned_layout)

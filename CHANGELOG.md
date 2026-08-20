@@ -1,3 +1,62 @@
+# v0.1.2 – DEUTSCH, ENGLISCH, FRANZÖSISCH
+
+Die Oberfläche spricht jetzt drei Sprachen. Die Umschaltung greift sofort,
+ohne Neustart.
+
+## Übersetzungssystem
+
+- `freizeitmanager/i18n/` mit `de.json`, `en.json`, `fr.json` – je 216
+  Schlüssel, Aufbau wie bei FPM (Punktschreibweise, Deutsch als Rückfallebene).
+- Ein unbekannter Schlüssel liefert den Schlüssel selbst zurück, statt die
+  Oberfläche mit einer Ausnahme abzubrechen. Dasselbe gilt für einen fehlenden
+  Platzhalter.
+- Die Sprache steht ganz oben in den Einstellungen: Wer sie sucht, versteht
+  den Rest der Seite womöglich noch nicht.
+
+## Datum und Wochentage gehören zur Sprache
+
+`strftime` gibt Wochentagsnamen in der Sprache des Betriebssystems aus, nicht
+in der gewählten. Deshalb kommen Wochentage aus den Sprachdateien und das
+Datumsformat aus der Sprache: `20.08.2026` im Deutschen, `20/08/2026` im
+Englischen und Französischen.
+
+## Begründungen sind Schlüssel, kein Text
+
+Die Rotation Engine speichert ihre Begründungen als `(Schlüssel, Parameter)`
+und übersetzt erst beim Anzeigen. Eine bereits berechnete Bewertung bleibt
+nach einem Sprachwechsel gültig, ohne neu gerechnet zu werden. Aus demselben
+Grund sind Dringlichkeits- und Vorschlagsbeschriftungen Funktionen statt
+Modulkonstanten: Ein Dict wird beim Import ausgewertet und würde die Sprache
+einfrieren, die beim Programmstart aktiv war.
+
+Beziehungsgrade und Gruppen werden dagegen einmalig beim ersten Start in der
+aktiven Sprache angelegt und danach nie wieder angefasst – es sind Nutzerdaten,
+die man umbenennen können muss.
+
+## Behobene Fehler
+
+- **Die Sprachdateien fehlten im PyInstaller-Paket.** Die gebaute Anwendung
+  hätte überall nur noch Schlüssel angezeigt. Sie werden jetzt mitgeliefert,
+  und `translator.py` findet sie auch unter `sys._MEIPASS`.
+- **`t` war in `dialogs.py` nicht importiert.** Ein Klick auf „Neuer Kontakt“
+  hätte die Anwendung mit einem `NameError` begrüßt. Kein Test hat je einen
+  Dialog geöffnet – diese Lücke ist mit `tests/test_dialogs.py` geschlossen.
+- Der erste Versuch, fehlende Sprachdateien im Selbsttest zu erkennen, schlug
+  nie an: `set_language` fällt bei einer fehlenden Datei still auf Deutsch
+  zurück. Geprüft wird jetzt die Datei selbst, nicht das Ergebnis von `t()`.
+
+## Tests
+
+68 statt 49. Neu:
+
+- `test_dialogs.py` – jeder Dialog wird in jeder Sprache wirklich aufgebaut.
+- `test_i18n_completeness.py` – gleiche Schlüsselmenge, gleiche Platzhalter,
+  gleiche Listenlängen in allen Sprachen; dazu ein Lauf durch alle Seiten in
+  allen Sprachen, der nach unaufgelösten Schlüsseln sucht. Gegengeprüft: Mit
+  einem absichtlich vergessenen `t()` schlägt er fehl.
+- `main.py --smoke` prüft zusätzlich, dass alle Sprachdateien im Paket liegen.
+  Gegengeprüft am gebauten Programm: Ohne `fr.json` bricht er mit Exitcode 1 ab.
+
 # v0.1.1 – RELEASE-PIPELINE UND INSTALLIERBARE MODULE
 
 0.1.0 lieferte nur Quellcode aus. Ab dieser Version entsteht bei jedem Tag ein

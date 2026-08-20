@@ -173,17 +173,19 @@ def compute_freshness(facts: list[InteractionFact],
 
 def describe_gap(result: FreshnessResult) -> str:
     """Menschliche Formulierung des letzten richtigen Kontakts."""
+    from freizeitmanager.i18n.translator import t
+
     if result.last_substantial_on is None:
         if result.last_interaction_on is None:
-            return "noch kein Kontakt erfasst"
-        return "bisher nur kurze Nachrichten"
+            return t("gap.never")
+        return t("gap.only_messages")
     days = result.substantial_gap_days or 0
     if days <= 0:
-        return "heute"
+        return t("gap.today")
     if days == 1:
-        return "gestern"
+        return t("gap.yesterday")
     if days < 14:
-        return f"vor {days} Tagen"
+        return t("gap.days", count=days)
     if days < 60:
-        return f"vor {days // 7} Wochen"
-    return f"vor {days // 30} Monaten"
+        return t("gap.weeks", count=days // 7)
+    return t("gap.months", count=days // 30)

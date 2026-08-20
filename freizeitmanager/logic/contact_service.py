@@ -106,7 +106,8 @@ def plan_activity(session: Session, title: str, planned_date: date,
                   contact_ids: list[int], *, kind: str = KIND_MEET,
                   start_time: str | None = None, end_time: str | None = None,
                   note: str | None = None) -> PlannedActivity:
-    activity = PlannedActivity(title=str(title or "Treffen").strip(),
+    from freizeitmanager.i18n.translator import t
+    activity = PlannedActivity(title=str(title or t("activity.default_title")).strip(),
                                planned_date=planned_date, kind=kind,
                                start_time=start_time, end_time=end_time, note=note)
     for cid in contact_ids:

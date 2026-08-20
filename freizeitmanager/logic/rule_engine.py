@@ -41,13 +41,7 @@ BLOCK_SNOOZED = "snoozed"
 BLOCK_PLANNED = "planned"
 BLOCK_COOLDOWN = "cooldown"
 
-BLOCK_LABELS = {
-    BLOCK_STATUS: "nicht in der Rotation",
-    BLOCK_PAUSED: "pausiert",
-    BLOCK_SNOOZED: "zurueckgestellt",
-    BLOCK_PLANNED: "Termin ist bereits geplant",
-    BLOCK_COOLDOWN: "gerade erst Kontakt gehabt",
-}
+# Die Beschriftungen liegen in den Sprachdateien unter "block.<name>".
 
 
 @dataclass
@@ -73,11 +67,12 @@ class CapacityState:
         return not self.week_full
 
     def reasons(self) -> list[str]:
+        from freizeitmanager.i18n.translator import t
         out: list[str] = []
         if self.week_full:
-            out.append(f"diese Woche schon {self.social_days_used} soziale Tage")
+            out.append(t("capacity.week_full", count=self.social_days_used))
         if self.weekends_full:
-            out.append(f"Wochenendbudget ausgeschoepft ({self.weekends_used})")
+            out.append(t("capacity.weekends_full", count=self.weekends_used))
         return out
 
 
@@ -89,7 +84,8 @@ class RuleVerdict:
     snoozed_until: date | None = None
 
     def labels(self) -> list[str]:
-        return [BLOCK_LABELS.get(b, b) for b in self.blocks]
+        from freizeitmanager.i18n.translator import t
+        return [t(f"block.{block}") for block in self.blocks]
 
 
 def _week_bounds(day: date) -> tuple[date, date]:

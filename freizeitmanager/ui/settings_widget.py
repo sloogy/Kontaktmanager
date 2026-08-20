@@ -8,6 +8,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -20,10 +21,21 @@ from PySide6.QtWidgets import (
 
 from freizeitmanager import paths
 from freizeitmanager.database import db
+from freizeitmanager.i18n.translator import LANGUAGES, current_language, set_language, t
 from freizeitmanager.logic.event_bus import AppEventBus
 from freizeitmanager.ui import theme
 
-WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+
+def _translator():
+    from freizeitmanager.i18n.translator import Translator
+    return Translator.instance()
+
+
+def _weekday_short(index: int) -> str:
+    """Kurzname des Wochentags in der aktiven Sprache."""
+    from datetime import date, timedelta
+    # 2026-08-17 ist ein Montag - ergibt Index 0.
+    return _translator().weekday_name(date(2026, 8, 17) + timedelta(days=index))
 
 
 class SettingsWidget(QWidget):
@@ -33,36 +45,52 @@ class SettingsWidget(QWidget):
         layout.setContentsMargins(22, 18, 22, 22)
         layout.setSpacing(12)
 
-        title = QLabel("Einstellungen")
+        title = QLabel(t("settings.title"))
         title.setObjectName("pageTitle")
         layout.addWidget(title)
 
-        capacity = QGroupBox("Soziale Kapazit\N{LATIN SMALL LETTER A WITH DIAERESIS}t")
+        # Die Sprache steht bewusst ganz oben: Wer sie sucht, versteht den Rest
+        # der Seite moeglicherweise noch nicht.
+        language_group = QGroupBox(t("settings.language_group"))
+        language_form = QFormLayout(language_group)
+        self.language = QComboBox()
+        for code, name in LANGUAGES.items():
+            self.language.addItem(name, code)
+        index = self.language.findData(current_language())
+        if index >= 0:
+            self.language.setCurrentIndex(index)
+        self.language.currentIndexChanged.connect(self._language_chosen)
+        language_form.addRow(t("settings.language"), self.language)
+        hint = QLabel(t("settings.language_hint"))
+        hint.setObjectName("pageHint")
+        language_form.addRow(hint)
+        layout.addWidget(language_group)
+
+        capacity = QGroupBox(t("settings.capacity"))
         form = QFormLayout(capacity)
-        self.week_active = QCheckBox("begrenzen")
+        self.week_active = QCheckBox(t("settings.limit"))
         self.week_days = QSpinBox()
         self.week_days.setRange(1, 7)
-        self.week_days.setSuffix(" Tage")
-        form.addRow(self._pair("Soziale Tage pro Woche", self.week_active, self.week_days))
+        self.week_days.setSuffix(t("settings.days_suffix"))
+        form.addRow(self._pair(t("settings.days_per_week"), self.week_active, self.week_days))
 
-        self.weekend_active = QCheckBox("begrenzen")
+        self.weekend_active = QCheckBox(t("settings.limit"))
         self.weekends = QSpinBox()
         self.weekends.setRange(1, 5)
-        form.addRow(self._pair("Wochenenden pro Monat", self.weekend_active, self.weekends))
+        form.addRow(self._pair(t("settings.weekends_per_month"), self.weekend_active, self.weekends))
 
         self.cooldown = QSpinBox()
         self.cooldown.setRange(0, 30)
-        self.cooldown.setSuffix(" Tage")
-        self.cooldown.setToolTip("Nach einem richtigen Kontakt so lange keinen neuen "
-                                 "Vorschlag. Nachrichten und Reaktionen zaehlen nicht.")
-        form.addRow("Ruhe nach Kontakt", self.cooldown)
+        self.cooldown.setSuffix(t("settings.days_suffix"))
+        self.cooldown.setToolTip(t("settings.cooldown_tooltip"))
+        form.addRow(t("settings.cooldown"), self.cooldown)
 
-        self.weekday_active = QCheckBox("nur bestimmte Wochentage")
+        self.weekday_active = QCheckBox(t("settings.weekdays_only"))
         form.addRow(self.weekday_active)
         days_row = QHBoxLayout()
         self.weekday_boxes = []
-        for index, label in enumerate(WEEKDAYS):
-            box = QCheckBox(label)
+        for index in range(7):
+            box = QCheckBox(_weekday_short(index))
             box.setProperty("weekday", index)
             self.weekday_boxes.append(box)
             days_row.addWidget(box)
@@ -70,32 +98,30 @@ class SettingsWidget(QWidget):
         form.addRow(days_row)
         layout.addWidget(capacity)
 
-        focus = QGroupBox("Fokus")
+        focus = QGroupBox(t("settings.focus"))
         focus_form = QFormLayout(focus)
         self.max_suggestions = QSpinBox()
         self.max_suggestions.setRange(1, 6)
-        self.max_suggestions.setToolTip("Mehr als drei Vorschlaege auf einmal erzeugen "
-                                        "erfahrungsgemaess Druck statt Klarheit.")
-        focus_form.addRow("Vorschl\N{LATIN SMALL LETTER A WITH DIAERESIS}ge im Cockpit", self.max_suggestions)
+        self.max_suggestions.setToolTip(t("settings.max_suggestions_tooltip"))
+        focus_form.addRow(t("settings.max_suggestions"), self.max_suggestions)
         layout.addWidget(focus)
 
-        host = QGroupBox("LifePlanner")
+        host = QGroupBox(t("settings.lifeplanner"))
         host_form = QFormLayout(host)
-        self.bridge_enabled = QCheckBox("Fokus an den LifePlanner melden")
-        self.bridge_enabled.setToolTip("Es werden nur Zaehlwerte und die naechsten "
-                                       "Schritte uebergeben - niemals Notizen.")
+        self.bridge_enabled = QCheckBox(t("settings.bridge_enabled"))
+        self.bridge_enabled.setToolTip(t("settings.bridge_tooltip"))
         host_form.addRow(self.bridge_enabled)
-        state = "verbunden" if paths.is_hosted() else "eigenst\N{LATIN SMALL LETTER A WITH DIAERESIS}ndig"
-        host_form.addRow("Betrieb", QLabel(state))
-        host_form.addRow("Datenordner", QLabel(str(paths.data_dir())))
+        state = t("settings.mode_hosted") if paths.is_hosted() else t("settings.mode_standalone")
+        host_form.addRow(t("settings.mode"), QLabel(state))
+        host_form.addRow(t("settings.data_dir"), QLabel(str(paths.data_dir())))
         layout.addWidget(host)
 
         row = QHBoxLayout()
-        save = QPushButton("Speichern")
+        save = QPushButton(t("common.save"))
         save.setStyleSheet(theme.BTN_PRIMARY)
         save.setCursor(Qt.CursorShape.PointingHandCursor)
         save.clicked.connect(self._save)
-        backup = QPushButton("Sicherung anlegen")
+        backup = QPushButton(t("settings.backup"))
         backup.setStyleSheet(theme.BTN_SECONDARY)
         backup.setCursor(Qt.CursorShape.PointingHandCursor)
         backup.clicked.connect(self._backup)
@@ -145,9 +171,22 @@ class SettingsWidget(QWidget):
             db.set_setting(session, "capacity.allowed_weekdays", allowed or "0,1,2,3,4,5,6")
             db.set_setting(session, "focus.max_suggestions", self.max_suggestions.value())
             db.set_setting(session, "bridge.enabled", "1" if self.bridge_enabled.isChecked() else "0")
-        self._status.setText("Gespeichert.")
+        self._status.setText(t("settings.saved"))
         AppEventBus.instance().emit_all()
+
+    def _language_chosen(self) -> None:
+        """Sprache sofort umschalten und speichern.
+
+        Ein Neustart waere hier eine unnoetige Huerde: Der Nutzer sieht
+        gerade diese Seite und will das Ergebnis sehen.
+        """
+        code = self.language.currentData()
+        set_language(code)
+        with db.get_session() as session:
+            db.set_setting(session, "ui.language", code)
+        AppEventBus.instance().language_changed.emit()
 
     def _backup(self) -> None:
         target = db.create_backup()
-        self._status.setText(f"Sicherung: {target}" if target else "Noch keine Datenbank vorhanden.")
+        self._status.setText(t("settings.backup_done", path=target) if target
+                             else t("settings.backup_none"))

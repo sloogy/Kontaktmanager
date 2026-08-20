@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from freizeitmanager.database.models import KIND_CALL, KIND_MEET, STATUS_NO_ROTATION
+from freizeitmanager.i18n.translator import t as tr
 from freizeitmanager.logic import contact_service as cs
 from freizeitmanager.logic import dashboard_service as dash
 from freizeitmanager.logic import rotation_engine as rot
@@ -150,5 +151,7 @@ def test_begruendung_ist_lesbar_und_ohne_punktzahl(session):
     cand = rot.evaluate_all(session, today=TODAY)[0]
     assert cand.why()
     assert all(isinstance(r, str) and r for r in cand.why())
-    assert "wichtiger Mensch fuer dich" in cand.why()
+    # Gegen den Katalog pruefen, nicht gegen eine kopierte Zeichenkette:
+    # so bleibt der Test bei Textkorrekturen und Sprachwechseln gueltig.
+    assert tr("reason.important") in cand.why()
     assert str(cand.score) not in cand.headline()

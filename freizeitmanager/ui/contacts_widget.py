@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 
 from freizeitmanager.database import db
 from freizeitmanager.database.models import STATUS_ARCHIVED, Contact, Group, RelationshipLevel
+from freizeitmanager.i18n.translator import t
 from freizeitmanager.integration import lifeplanner_bridge as bridge
 from freizeitmanager.logic import contact_service as cs
 from freizeitmanager.logic import rotation_engine as rot
@@ -32,8 +33,8 @@ from freizeitmanager.logic.event_bus import AppEventBus
 from freizeitmanager.ui import theme
 from freizeitmanager.ui.dialogs import ContactDialog, LogInteractionDialog
 
-COLUMNS = ["", "Name", "Beziehung", "Wichtigkeit", "Rhythmus", "Zuletzt", "Status"]
-IMPORTANCE_SHORT = {5: "A", 4: "B", 3: "C", 2: "D", 1: "E"}
+COLUMN_KEYS = ["", "contacts.col_name", "contacts.col_level", "contacts.col_importance",
+               "contacts.col_rhythm", "contacts.col_last", "contacts.col_status"]
 
 
 class ContactsWidget(QWidget):
@@ -54,33 +55,33 @@ class ContactsWidget(QWidget):
         layout.setContentsMargins(22, 18, 22, 22)
         layout.setSpacing(12)
 
-        title = QLabel("Kontakte")
+        title = QLabel(t("contacts.title"))
         title.setObjectName("pageTitle")
         layout.addWidget(title)
 
         bar = QHBoxLayout()
         bar.setSpacing(8)
         self._search = QLineEdit()
-        self._search.setPlaceholderText("Suchen \N{HORIZONTAL ELLIPSIS}")
+        self._search.setPlaceholderText(t("common.search"))
         self._search.setClearButtonEnabled(True)
         self._search.textChanged.connect(self.refresh)
         bar.addWidget(self._search, 1)
 
-        add = QPushButton("+ Neuer Kontakt")
+        add = QPushButton(t("contacts.new"))
         add.setStyleSheet(theme.BTN_PRIMARY)
         add.setCursor(Qt.CursorShape.PointingHandCursor)
         add.clicked.connect(self._create)
         bar.addWidget(add)
 
-        self._log_button = QPushButton("Kontakt eintragen")
+        self._log_button = QPushButton(t("contacts.log"))
         self._log_button.setStyleSheet(theme.BTN_SUCCESS)
         self._log_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._log_button.clicked.connect(self._log_selected)
         bar.addWidget(self._log_button)
         layout.addLayout(bar)
 
-        self._table = QTableWidget(0, len(COLUMNS))
-        self._table.setHorizontalHeaderLabels(COLUMNS)
+        self._table = QTableWidget(0, len(COLUMN_KEYS))
+        self._table.setHorizontalHeaderLabels([t(key) if key else "" for key in COLUMN_KEYS])
         self._table.verticalHeader().setVisible(False)
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -92,11 +93,11 @@ class ContactsWidget(QWidget):
         header = self._table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        for column in range(2, len(COLUMNS)):
+        for column in range(2, len(COLUMN_KEYS)):
             header.setSectionResizeMode(column, QHeaderView.ResizeMode.ResizeToContents)
         layout.addWidget(self._table, 1)
 
-        self._empty = QLabel("Noch keine Kontakte. Leg mit \N{DOUBLE LOW-9 QUOTATION MARK}+ Neuer Kontakt\N{LEFT DOUBLE QUOTATION MARK} los.")
+        self._empty = QLabel(t("contacts.empty"))
         self._empty.setObjectName("pageHint")
         self._empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self._empty)
@@ -117,10 +118,10 @@ class ContactsWidget(QWidget):
                     cand.icon if cand else "",
                     theme.URGENCY_ACCENTS.get(cand.urgency, theme.ACCENT_NEUTRAL) if cand else None,
                     contact.name,
-                    contact.level.name if contact.level else "\N{EM DASH}",
-                    IMPORTANCE_SHORT.get(contact.importance, "?"),
-                    f"alle {contact.target_interval_days} Tage",
-                    cand.gap_text if cand else "\N{EM DASH}",
+                    contact.level.name if contact.level else t("common.none"),
+                    t(f"importance.short_{contact.importance}"),
+                    t("contacts.rhythm_value", days=contact.target_interval_days),
+                    cand.gap_text if cand else t("common.none"),
                     self._status_text(cand, contact),
                 ))
 
@@ -138,20 +139,19 @@ class ContactsWidget(QWidget):
                 self._table.setItem(index, column, item)
         self._table.setVisible(bool(rows))
         self._empty.setVisible(not rows)
-        if needle and not rows:
-            self._empty.setText("Keine Treffer.")
-        else:
-            self._empty.setText("Noch keine Kontakte. Leg mit \N{DOUBLE LOW-9 QUOTATION MARK}+ Neuer Kontakt\N{LEFT DOUBLE QUOTATION MARK} los.")
+        self._empty.setText(t("contacts.no_match") if needle and not rows else t("contacts.empty"))
 
     @staticmethod
     def _status_text(cand, contact) -> str:
+        from freizeitmanager.i18n.translator import format_short_date
         if cand is None:
-            return "\N{EM DASH}"
+            return t("common.none")
         if cand.planned_on is not None:
-            return f"Termin am {cand.planned_on.strftime('%d.%m.')}"
+            return t("reason.planned_on", date=format_short_date(cand.planned_on))
         if cand.blocks:
-            return cand.reasons[0] if cand.reasons else "ruht"
-        return rot.URGENCY_LABELS[cand.urgency]
+            reasons = cand.why()
+            return reasons[0] if reasons else t("rotation.resting")
+        return cand.urgency_text
 
     def _selected_id(self) -> int | None:
         row = self._table.currentRow()
@@ -215,8 +215,7 @@ class ContactsWidget(QWidget):
     def _log_selected(self, kind: str | None = None) -> None:
         contact_id = self._selected_id()
         if contact_id is None:
-            QMessageBox.information(self, "Kontakt eintragen",
-                                    "Bitte zuerst eine Person in der Liste ausw\N{LATIN SMALL LETTER A WITH DIAERESIS}hlen.")
+            QMessageBox.information(self, t("contacts.log"), t("contacts.select_first"))
             return
         with db.get_session() as session:
             name = session.get(Contact, contact_id).name
@@ -235,13 +234,13 @@ class ContactsWidget(QWidget):
         if contact_id is None:
             return
         menu = QMenu(self)
-        act_log = menu.addAction("Kontakt eintragen \N{HORIZONTAL ELLIPSIS}")
-        act_edit = menu.addAction("Bearbeiten \N{HORIZONTAL ELLIPSIS}")
+        act_log = menu.addAction(t("contacts.menu_log"))
+        act_edit = menu.addAction(t("contacts.menu_edit"))
         menu.addSeparator()
-        act_wish = menu.addAction("M\N{LATIN SMALL LETTER O WITH DIAERESIS}chte ich bald sehen")
-        act_snooze = menu.addAction("30 Tage pausieren")
+        act_wish = menu.addAction(t("contacts.menu_wish"))
+        act_snooze = menu.addAction(t("contacts.menu_snooze"))
         menu.addSeparator()
-        act_archive = menu.addAction("Archivieren")
+        act_archive = menu.addAction(t("contacts.menu_archive"))
 
         chosen = menu.exec(self._table.viewport().mapToGlobal(pos))
         if chosen is None:

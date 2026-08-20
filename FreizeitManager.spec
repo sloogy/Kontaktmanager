@@ -20,7 +20,13 @@ from pathlib import Path
 
 ROOT = Path(SPECPATH)
 
+# Die Sprachdateien MUESSEN mit ins Paket: translator.py laedt sie zur
+# Laufzeit ueber den Dateipfad. Fehlen sie, zeigt die gebaute Anwendung
+# ueberall nur noch Schluessel statt Text.
 datas = [
+    (str(ROOT / "freizeitmanager" / "i18n" / "de.json"), "freizeitmanager/i18n"),
+    (str(ROOT / "freizeitmanager" / "i18n" / "en.json"), "freizeitmanager/i18n"),
+    (str(ROOT / "freizeitmanager" / "i18n" / "fr.json"), "freizeitmanager/i18n"),
     (str(ROOT / "version.json"), "."),
     (str(ROOT / "module.json"), "."),
     (str(ROOT / "README.md"), "."),

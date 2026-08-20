@@ -21,8 +21,9 @@ from freizeitmanager.database.models import PlannedActivity
 from freizeitmanager.logic import rotation_engine as rot
 from freizeitmanager.logic.rule_engine import load_capacity
 
-CALM_MESSAGE = "Alles im gruenen Bereich. Nichts, was jetzt dringend waere."
-WELCOME_BACK = "Schoen, dass du wieder da bist. Diese Kontakte waeren jetzt sinnvoll."
+# Schluessel statt Text: Die Meldung wird erst beim Anzeigen uebersetzt.
+CALM_MESSAGE = "cockpit.calm"
+WELCOME_BACK = "cockpit.welcome_back"
 
 
 @dataclass
@@ -33,8 +34,15 @@ class UpcomingPlan:
     names: list[str] = field(default_factory=list)
 
     def label(self) -> str:
-        who = ", ".join(self.names) if self.names else "-"
-        return f"{self.on.strftime('%a %d.%m.')} \N{MIDDLE DOT} {self.title} ({who})"
+        """Wochentag und Datum in der aktiven Sprache.
+
+        strftime waere hier falsch: Es gibt Wochentagsnamen in der Sprache des
+        Betriebssystems aus, nicht in der gewaehlten.
+        """
+        from freizeitmanager.i18n.translator import format_short_date, weekday_name
+        who = ", ".join(self.names) if self.names else "\N{EM DASH}"
+        return (f"{weekday_name(self.on)} {format_short_date(self.on)} "
+                f"\N{MIDDLE DOT} {self.title} ({who})")
 
 
 @dataclass
@@ -49,8 +57,9 @@ class FocusSummary:
     capacity_notes: list[str] = field(default_factory=list)
 
     def tiles(self) -> list[tuple[str, int]]:
-        return [("Jetzt passend", self.due_now), ("Diese Woche", self.this_week),
-                ("Geplant", self.planned), ("Alles gut", self.all_good)]
+        """Kacheln als (Uebersetzungsschluessel, Wert) - die UI uebersetzt."""
+        return [("cockpit.tile_due", self.due_now), ("cockpit.tile_week", self.this_week),
+                ("cockpit.tile_planned", self.planned), ("cockpit.tile_good", self.all_good)]
 
     @property
     def is_calm(self) -> bool:

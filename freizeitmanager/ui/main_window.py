@@ -12,18 +12,20 @@ from PySide6.QtWidgets import QLabel, QMainWindow, QPushButton, QStackedWidget, 
 
 from freizeitmanager.app_info import APP_NAME, APP_VERSION
 from freizeitmanager.database import db
+from freizeitmanager.i18n.translator import load_language_from_settings, t
+from freizeitmanager.logic.event_bus import AppEventBus
 from freizeitmanager.ui.contacts_widget import ContactsWidget
 from freizeitmanager.ui.dashboard_widget import DashboardWidget
 from freizeitmanager.ui.rotation_widget import RotationWidget
 from freizeitmanager.ui.settings_widget import SettingsWidget
 from freizeitmanager.ui.styles import get_stylesheet, install_emoji_fallback
 
-# key, Beschriftung, nur im Expertenmodus
+# key, Uebersetzungsschluessel, nur im Expertenmodus
 PAGES = [
-    ("cockpit", "Heute", False),
-    ("contacts", "Kontakte", False),
-    ("rotation", "Rotation", True),
-    ("settings", "Einstellungen", False),
+    ("cockpit", "nav.cockpit", False),
+    ("contacts", "nav.contacts", False),
+    ("rotation", "nav.rotation", True),
+    ("settings", "nav.settings", False),
 ]
 
 
@@ -36,6 +38,7 @@ class MainWindow(QMainWindow):
         install_emoji_fallback()
         self.setStyleSheet(get_stylesheet(1.0))
 
+        load_language_from_settings()
         with db.get_session() as session:
             self._expert = db.get_setting(session, "ui.mode", "simple") == "expert"
 
@@ -66,6 +69,7 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+N"), self, self._contacts._create)
         QShortcut(QKeySequence("Ctrl+E"), self, self._toggle_mode)
 
+        AppEventBus.instance().language_changed.connect(self._rebuild_for_language)
         self._apply_mode()
         self.show_page("cockpit")
 
@@ -81,8 +85,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(logo)
 
         self._nav_buttons: dict[str, QPushButton] = {}
-        for key, label, _expert_only in PAGES:
-            button = QPushButton(label)
+        for key, label_key, _expert_only in PAGES:
+            button = QPushButton(t(label_key))
             button.setObjectName("navButton")
             button.setCheckable(True)
             button.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -97,10 +101,42 @@ class MainWindow(QMainWindow):
         self._mode_button.clicked.connect(self._toggle_mode)
         layout.addWidget(self._mode_button)
 
-        version = QLabel(f"Version {APP_VERSION}")
+        version = QLabel(t("app.version", version=APP_VERSION))
         version.setObjectName("sidebarVersion")
         layout.addWidget(version)
         return sidebar
+
+    def _rebuild_for_language(self) -> None:
+        """Baut alle Ansichten neu auf, damit die Sprache sofort greift.
+
+        Qt uebersetzt gesetzte Beschriftungen nicht nachtraeglich. Ein
+        Neuaufbau ist hier ehrlicher als hunderte setText-Aufrufe zu pflegen,
+        von denen frueher oder spaeter einer vergessen wird.
+        """
+        current = next((key for key, button in self._nav_buttons.items()
+                        if button.isChecked()), "cockpit")
+        for key, label_key, _ in PAGES:
+            self._nav_buttons[key].setText(t(label_key))
+
+        for key, factory in (("cockpit", lambda: DashboardWidget(expert=self._expert)),
+                             ("contacts", lambda: ContactsWidget(expert=self._expert)),
+                             ("rotation", RotationWidget),
+                             ("settings", SettingsWidget)):
+            old = self._pages[key]
+            new = factory()
+            self._stack.insertWidget(self._stack.indexOf(old), new)
+            self._stack.removeWidget(old)
+            old.deleteLater()
+            self._pages[key] = new
+
+        self._dashboard = self._pages["cockpit"]
+        self._contacts = self._pages["contacts"]
+        self._rotation = self._pages["rotation"]
+        self._settings = self._pages["settings"]
+        self._dashboard.navigate_to.connect(self.show_page)
+        self._dashboard.open_contact.connect(self._open_contact)
+        self._apply_mode()
+        self.show_page(current)
 
     def show_page(self, key: str) -> None:
         widget = self._pages.get(key)
@@ -123,8 +159,9 @@ class MainWindow(QMainWindow):
     def _apply_mode(self) -> None:
         for key, _label, expert_only in PAGES:
             self._nav_buttons[key].setVisible(self._expert or not expert_only)
-        self._mode_button.setText("\N{LEFTWARDS ARROW} Einfachmodus" if self._expert
-                                  else "Expertenmodus \N{RIGHTWARDS ARROW}")
+        self._mode_button.setText(
+            "\N{LEFTWARDS ARROW} " + t("nav.simple_mode") if self._expert
+            else t("nav.expert_mode") + " \N{RIGHTWARDS ARROW}")
         self._dashboard.set_expert(self._expert)
         self._contacts.set_expert(self._expert)
         if not self._expert and self._stack.currentWidget() is self._rotation:
