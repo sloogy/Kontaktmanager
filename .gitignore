@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+*.egg-info/
+.venv/
+venv/
+
+# Laufzeitdaten des Moduls - gehoeren nie ins Repository
+data/
+*.db
+*.db-journal
+*.sqlite3
+logs/
+backups/
+
+# Betriebssystem / Editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
