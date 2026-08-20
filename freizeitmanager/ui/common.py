@@ -3,8 +3,16 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QKeyEvent, QMouseEvent
-from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-                               QMenu, QPushButton, QSizePolicy, QVBoxLayout)
+from PySide6.QtWidgets import (
+    QApplication,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QMenu,
+    QPushButton,
+    QSizePolicy,
+    QVBoxLayout,
+)
 
 from freizeitmanager.logic import rotation_engine as rot
 from freizeitmanager.ui import theme

@@ -9,12 +9,16 @@ from datetime import date, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("FREIZEITMANAGER_DB_PATH", os.path.join(tempfile.mkdtemp(), "demo.db"))
 
-from freizeitmanager.database import db                     # noqa: E402
-from freizeitmanager.database.models import (KIND_CALL_LONG, KIND_MEET,       # noqa: E402
-                                             KIND_MESSAGE, KIND_REACTION)
-from freizeitmanager.logic import contact_service as cs     # noqa: E402
-from freizeitmanager.logic import dashboard_service as dash  # noqa: E402
-from freizeitmanager.logic import rotation_engine as rot    # noqa: E402
+from freizeitmanager.database import db
+from freizeitmanager.database.models import (
+    KIND_CALL_LONG,
+    KIND_MEET,
+    KIND_MESSAGE,
+    KIND_REACTION,
+)
+from freizeitmanager.logic import contact_service as cs
+from freizeitmanager.logic import dashboard_service as dash
+from freizeitmanager.logic import rotation_engine as rot
 
 TODAY = date(2026, 8, 20)
 

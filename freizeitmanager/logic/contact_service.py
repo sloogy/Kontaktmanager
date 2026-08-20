@@ -11,11 +11,20 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from freizeitmanager.database.models import (INTERACTION_KINDS, KIND_MEET,
-                                             QUALITY_NORMAL, Contact, Group,
-                                             Interaction, PlannedActivity,
-                                             RelationshipLevel, RotationSnooze,
-                                             STATUS_ACTIVE, STATUS_PAUSED, Tag)
+from freizeitmanager.database.models import (
+    INTERACTION_KINDS,
+    KIND_MEET,
+    QUALITY_NORMAL,
+    STATUS_ACTIVE,
+    STATUS_PAUSED,
+    Contact,
+    Group,
+    Interaction,
+    PlannedActivity,
+    RelationshipLevel,
+    RotationSnooze,
+    Tag,
+)
 
 
 def _get_or_create(session: Session, model, name: str, **extra):

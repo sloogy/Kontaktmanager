@@ -59,7 +59,7 @@ def import_legacy(session: Session, legacy_db: Path) -> dict[str, int]:
                 existing_groups.add(name)
                 stats["groups"] += 1
 
-    existing_levels = {l.name for l in session.query(RelationshipLevel)}
+    existing_levels = {row.name for row in session.query(RelationshipLevel)}
     if "beziehungsgrade" in tables:
         for row in conn.execute("select beziehungsgrad from beziehungsgrade"):
             name = (row["beziehungsgrad"] or "").strip()

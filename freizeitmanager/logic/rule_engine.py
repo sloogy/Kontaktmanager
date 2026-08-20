@@ -18,11 +18,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from freizeitmanager.database import db
-from freizeitmanager.database.models import (KIND_MEET, KIND_MEET_LONG,
-                                             ROTATING_STATUSES, Contact,
-                                             Interaction, PlannedActivity,
-                                             INTERACTION_KINDS, RotationSnooze,
-                                             STATUS_PAUSED)
+from freizeitmanager.database.models import (
+    INTERACTION_KINDS,
+    KIND_MEET,
+    KIND_MEET_LONG,
+    ROTATING_STATUSES,
+    STATUS_PAUSED,
+    Contact,
+    Interaction,
+    PlannedActivity,
+    RotationSnooze,
+)
 from freizeitmanager.logic.freshness import is_substantial
 
 MEETING_KINDS = {KIND_MEET, KIND_MEET_LONG}
@@ -158,9 +164,9 @@ def check_contact(session: Session, contact: Contact, capacity: CapacityState,
         else:
             verdict.blocks.append(BLOCK_STATUS)
 
-    if contact.paused_until and contact.paused_until >= today:
-        if BLOCK_PAUSED not in verdict.blocks:
-            verdict.blocks.append(BLOCK_PAUSED)
+    if (contact.paused_until and contact.paused_until >= today
+            and BLOCK_PAUSED not in verdict.blocks):
+        verdict.blocks.append(BLOCK_PAUSED)
 
     snooze = session.scalar(
         select(RotationSnooze)

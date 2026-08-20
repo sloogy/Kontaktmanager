@@ -1,23 +1,42 @@
 """Dialoge: Kontakt anlegen/bearbeiten, Termin planen, Kontakt nachtragen."""
 from __future__ import annotations
 
-from datetime import date, timedelta
-
 from PySide6.QtCore import QDate, Qt
-from PySide6.QtWidgets import (QCheckBox, QComboBox, QDateEdit, QDialog,
-                               QDialogButtonBox, QFormLayout, QGroupBox,
-                               QHBoxLayout, QLabel, QLineEdit, QListWidget,
-                               QListWidgetItem, QSpinBox, QTextEdit,
-                               QVBoxLayout)
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDateEdit,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QSpinBox,
+    QTextEdit,
+    QVBoxLayout,
+)
 
-from freizeitmanager.database.models import (INTERACTION_KINDS, KIND_CALL,
-                                             KIND_CALL_LONG, KIND_CHAT,
-                                             KIND_MEET, KIND_MEET_LONG,
-                                             KIND_MESSAGE, KIND_REACTION,
-                                             QUALITY_INTENSE, QUALITY_NORMAL,
-                                             QUALITY_SHORT, STATUS_ACTIVE,
-                                             STATUS_ARCHIVED, STATUS_LOW,
-                                             STATUS_NO_ROTATION, STATUS_PAUSED)
+from freizeitmanager.database.models import (
+    KIND_CALL,
+    KIND_CALL_LONG,
+    KIND_CHAT,
+    KIND_MEET,
+    KIND_MEET_LONG,
+    KIND_MESSAGE,
+    KIND_REACTION,
+    QUALITY_INTENSE,
+    QUALITY_NORMAL,
+    QUALITY_SHORT,
+    STATUS_ACTIVE,
+    STATUS_ARCHIVED,
+    STATUS_LOW,
+    STATUS_NO_ROTATION,
+    STATUS_PAUSED,
+)
 
 KIND_LABELS = [
     (KIND_MEET, "Treffen"),

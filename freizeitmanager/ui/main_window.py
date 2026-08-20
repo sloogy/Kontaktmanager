@@ -8,12 +8,10 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import (QLabel, QMainWindow, QPushButton, QStackedWidget,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import QLabel, QMainWindow, QPushButton, QStackedWidget, QVBoxLayout, QWidget
 
 from freizeitmanager.app_info import APP_NAME, APP_VERSION
 from freizeitmanager.database import db
-from freizeitmanager.logic.event_bus import AppEventBus
 from freizeitmanager.ui.contacts_widget import ContactsWidget
 from freizeitmanager.ui.dashboard_widget import DashboardWidget
 from freizeitmanager.ui.rotation_widget import RotationWidget

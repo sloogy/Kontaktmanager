@@ -12,8 +12,18 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import (Boolean, Column, Date, DateTime, ForeignKey, Integer,
-                        String, Table, Text, UniqueConstraint)
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, relationship
 
 

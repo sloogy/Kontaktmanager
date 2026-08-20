@@ -56,10 +56,10 @@ class AppEventBus(QObject):
     focus_changed = Signal()
     settings_changed = Signal()
 
-    _instance: "AppEventBus | None" = None
+    _instance: AppEventBus | None = None
 
     @classmethod
-    def instance(cls) -> "AppEventBus":
+    def instance(cls) -> AppEventBus:
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance

@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-from freizeitmanager.database import db
-from freizeitmanager.database.models import (KIND_CALL, KIND_MEET,
-                                             KIND_MESSAGE, STATUS_NO_ROTATION)
+from freizeitmanager.database.models import KIND_CALL, KIND_MEET, STATUS_NO_ROTATION
 from freizeitmanager.logic import contact_service as cs
 from freizeitmanager.logic import dashboard_service as dash
 from freizeitmanager.logic import rotation_engine as rot
@@ -37,9 +35,9 @@ def test_ueberfaelliger_wichtiger_kontakt_schlaegt_frischen(session):
 
 
 def test_geplanter_termin_nimmt_aus_dem_fokus(session):
-    p = _person(session, "Leandro", interval=30)
-    cs.log_interaction(session, p.id, KIND_MEET, occurred_on=ago(50))
-    cs.plan_activity(session, "Spieleabend", TODAY + timedelta(3), [p.id])
+    person = _person(session, "Leandro", interval=30)
+    cs.log_interaction(session, person.id, KIND_MEET, occurred_on=ago(50))
+    cs.plan_activity(session, "Spieleabend", TODAY + timedelta(3), [person.id])
     session.flush()
 
     cand = {c.name: c for c in rot.evaluate_all(session, today=TODAY)}["Leandro"]
@@ -65,7 +63,7 @@ def test_snooze_blockt_und_interaktion_hebt_ihn_auf(session):
 
 
 def test_status_ohne_rotation_wird_nie_vorgeschlagen(session):
-    p = _person(session, "Kollege X", status=STATUS_NO_ROTATION, interval=90)
+    _person(session, "Kollege X", status=STATUS_NO_ROTATION, interval=90)
     session.flush()
     cand = {c.name: c for c in rot.evaluate_all(session, today=TODAY)}["Kollege X"]
     assert "status" in cand.blocks

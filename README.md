@@ -17,13 +17,53 @@ sondern **„was wäre jetzt eine gute, realistische Aktion für mich?"**
 | Fokus-Cockpit-Service (`logic/dashboard_service.py`) | fertig |
 | LifePlanner-Bridge + Legacy-Import (`integration/`) | fertig |
 | Qt-Oberfläche: Cockpit, Kontakte, Rotation, Einstellungen | fertig |
-| Tests | 34, grün (inkl. UI-Rauchtest) |
+| Release-Pipeline: CI, Build, `.lpmodule`, Verifizierer | fertig |
+| Tests | 49, grün (UI- und Paketierungstests inbegriffen) |
 | Hobbys / Aktivitäten (0.2) | offen |
 | Kalenderzugriff (0.3) | architektonisch vorgesehen, nicht gebaut |
 
 Start: `python3 main.py`
 Kontrolllauf ohne Qt: `python3 tools/demo_cockpit.py`
 Tests: `QT_QPA_PLATFORM=offscreen python3 -m pytest tests/ -q`
+Rauchtest: `python3 tools/gui_smoke_test.py`
+
+## Release
+
+Die Version steht nur in `version.json`; `app_info.py` und `module.json` werden
+daraus abgeleitet:
+
+```bash
+python3 tools/sync_version.py            # ableiten
+python3 tools/sync_version.py --check    # nur prüfen, schreibt nichts
+```
+
+Ein Tag `v*` löst die Pipeline aus. Sie prüft zuerst (Tag und Version müssen
+übereinstimmen, Linting, Tests, GUI-Rauchtest), baut dann mit PyInstaller auf
+Linux und Windows und veröffentlicht zuletzt zwei `.lpmodule`-Pakete samt
+Prüfsummen. Gebaut wird nur, was geprüft wurde; veröffentlicht wird nur, was
+`tools/verify_lpmodule.py` akzeptiert.
+
+Lokal von Hand:
+
+```bash
+python3 -m PyInstaller FreizeitManager.spec --noconfirm --clean
+QT_QPA_PLATFORM=offscreen ./dist/FreizeitManager/FreizeitManager --smoke
+python3 tools/build_lifeplanner_module.py \
+  --runtime-dir dist/FreizeitManager --runtime-name FreizeitManager \
+  --platform linux-x86_64 --output-dir dist --allow-unsigned
+python3 tools/verify_lpmodule.py dist/freizeitmanager_*.lpmodule
+```
+
+Das Paketformat folgt `lifeplanner_core/module_installer.py`: `component.json`
+im Schema `lifeplanner.component.v1`, ein `payload/`-Verzeichnis und ein
+`payload_sha256` über genau diesen Baum. Das Ausführbit des deklarierten
+Programms wird direkt ins Archiv geschrieben – CI-Artefakte verlieren Unix-Rechte,
+und das Linux-Paket kann auf einem Windows-Runner entstehen. Ohne das startet
+das installierte Modul mit „[Errno 13] Keine Berechtigung“.
+
+Signatur (Ed25519) ist vorbereitet und optional. Ohne Schlüssel entstehen
+sichtbar unsignierte Pakete; mit hinterlegtem `FREIZEITMANAGER_SIGNING_KEY`
+wird `component.json` signiert und die Signatur vor dem Hochladen geprüft.
 
 ## Die Engine in sechs Schichten
 

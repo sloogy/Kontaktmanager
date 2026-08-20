@@ -4,10 +4,8 @@ import json
 import sqlite3
 from datetime import date, timedelta
 
-from freizeitmanager import paths
 from freizeitmanager.database import db
-from freizeitmanager.database.models import (Group, Interaction,
-                                             RelationshipLevel, Tag)
+from freizeitmanager.database.models import Group, RelationshipLevel
 from freizeitmanager.integration import lifeplanner_bridge as bridge
 from freizeitmanager.integration.legacy_import import import_legacy
 from freizeitmanager.logic import contact_service as cs
@@ -34,7 +32,8 @@ def test_bridge_outbox_haelt_den_modulvertrag_ein(session, tmp_path, monkeypatch
     target = bridge.publish_focus(cockpit, TODAY)
     assert target is not None and target.name == "freizeitmanager_to_lifeplanner.jsonl"
 
-    records = [json.loads(l) for l in target.read_text(encoding="utf-8").splitlines() if l.strip()]
+    lines = target.read_text(encoding="utf-8").splitlines()
+    records = [json.loads(line) for line in lines if line.strip()]
     manifest = records[0]
     assert manifest["schema"] == bridge.MANIFEST_SCHEMA
     assert manifest["module"] == "freizeitmanager"

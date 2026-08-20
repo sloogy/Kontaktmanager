@@ -18,11 +18,18 @@ import math
 from dataclasses import dataclass, field
 from datetime import date
 
-from freizeitmanager.database.models import (KIND_CALL, KIND_CALL_LONG,
-                                             KIND_CHAT, KIND_MEET,
-                                             KIND_MEET_LONG, KIND_MESSAGE,
-                                             KIND_REACTION, QUALITY_INTENSE,
-                                             QUALITY_NORMAL, QUALITY_SHORT)
+from freizeitmanager.database.models import (
+    KIND_CALL,
+    KIND_CALL_LONG,
+    KIND_CHAT,
+    KIND_MEET,
+    KIND_MEET_LONG,
+    KIND_MESSAGE,
+    KIND_REACTION,
+    QUALITY_INTENSE,
+    QUALITY_NORMAL,
+    QUALITY_SHORT,
+)
 
 # Grundwirkung je Kontaktart. Konfigurierbar, absichtlich nicht im Schema.
 # Bezugspunkt: Ein normales Treffen erfuellt den gewuenschten Rhythmus

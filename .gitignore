@@ -20,3 +20,8 @@ backups/
 *.swp
 .idea/
 .vscode/
+
+# Buildartefakte
+build/
+dist/
+*.spec.bak

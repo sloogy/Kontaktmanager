@@ -1,0 +1,5 @@
+# Build- und Pruefabhaengigkeiten. Fuer den reinen Betrieb nicht noetig.
+pyinstaller>=6.0
+pytest>=8.0
+ruff>=0.12,<1.0
+cryptography>=43.0,<47.0

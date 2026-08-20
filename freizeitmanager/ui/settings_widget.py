@@ -6,9 +6,17 @@ Kontaktmanagers. Neu ist, dass sie tatsaechlich wirken.
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QCheckBox, QFormLayout, QGroupBox, QHBoxLayout,
-                               QLabel, QPushButton, QSpinBox, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
 
 from freizeitmanager import paths
 from freizeitmanager.database import db

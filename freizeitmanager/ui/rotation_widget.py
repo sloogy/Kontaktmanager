@@ -6,9 +6,15 @@ die Engine nachvollziehbar bleibt, nicht fuer den Alltag.
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QAbstractItemView, QHeaderView, QLabel,
-                               QTableWidget, QTableWidgetItem, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHeaderView,
+    QLabel,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from freizeitmanager.database import db
 from freizeitmanager.logic import rotation_engine as rot

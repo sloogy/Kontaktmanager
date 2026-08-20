@@ -1,0 +1,203 @@
+name: Release
+
+# Ein Tag loest die Veroeffentlichung aus. Gebaut wird nur, was vorher
+# geprueft wurde; veroeffentlicht wird nur, was der Verifizierer akzeptiert.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag, z.B. v0.1.1'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  check:
+    name: Pruefen
+    runs-on: ubuntu-latest
+    env:
+      QT_QPA_PLATFORM: offscreen
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Qt-Systembibliotheken installieren
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 \
+            libdbus-1-3 libfontconfig1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-build.txt
+
+      - name: Tag, version.json, app_info und module.json muessen uebereinstimmen
+        run: python tools/sync_version.py --check --expect-tag "$RELEASE_TAG"
+
+      - id: version
+        run: echo "version=$(python -c 'import json;print(json.load(open("version.json"))["version"])')" >> "$GITHUB_OUTPUT"
+
+      - run: ruff check freizeitmanager tools tests main.py
+      - run: python -m pytest tests/ -q
+      - run: python tools/gui_smoke_test.py
+
+  build:
+    name: Bauen (${{ matrix.platform }})
+    needs: check
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-x86_64
+            executable: FreizeitManager/FreizeitManager
+          - os: windows-latest
+            platform: windows-x86_64
+            executable: FreizeitManager/FreizeitManager.exe
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Qt-Systembibliotheken installieren
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 \
+            libdbus-1-3 libfontconfig1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-build.txt
+
+      - name: PyInstaller
+        run: python -m PyInstaller FreizeitManager.spec --noconfirm --clean
+
+      - name: Programm liegt dort, wo module.json es deklariert
+        shell: bash
+        run: |
+          test -f "dist/${{ matrix.executable }}" \
+            || { echo "FEHLER: dist/${{ matrix.executable }} fehlt"; exit 1; }
+
+      # Faengt fehlende PyInstaller-Importe ab: das Paket entsteht, startet
+      # aber beim Doppelklick nicht. Der Selbsttest baut Fenster und
+      # Datenbank auf und beendet sich mit Code 0.
+      - name: Gebautes Programm besteht seinen Selbsttest
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          set -euo pipefail
+          if [ "${{ runner.os }}" = "Linux" ]; then chmod +x "dist/${{ matrix.executable }}"; fi
+          "dist/${{ matrix.executable }}" --version
+          "dist/${{ matrix.executable }}" --smoke
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runtime-${{ matrix.platform }}
+          path: dist/FreizeitManager
+          retention-days: 3
+          if-no-files-found: error
+
+  publish:
+    name: Veroeffentlichen
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-build.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: runtime-linux-x86_64
+          path: runtime/linux-x86_64/FreizeitManager
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: runtime-windows-x86_64
+          path: runtime/windows-x86_64/FreizeitManager
+
+      # Der Paketierer schreibt das Ausfuehrbit selbst ins Archiv.
+      # download-artifact liefert Unix-Rechte nicht mit zurueck.
+      - name: Module packen
+        env:
+          FREIZEITMANAGER_SIGNING_KEY: ${{ secrets.FREIZEITMANAGER_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          SIGN_ARGS="--allow-unsigned"
+          if [ -n "${FREIZEITMANAGER_SIGNING_KEY:-}" ]; then
+            SIGN_ARGS="--signing-key-env FREIZEITMANAGER_SIGNING_KEY"
+          fi
+          for platform in linux-x86_64 windows-x86_64; do
+            python tools/build_lifeplanner_module.py \
+              --runtime-dir "runtime/$platform/FreizeitManager" \
+              --runtime-name FreizeitManager \
+              --platform "$platform" \
+              --output-dir dist \
+              --release-tag "$RELEASE_TAG" \
+              $SIGN_ARGS
+          done
+
+      - name: Pakete gegen den Host-Vertrag pruefen
+        env:
+          FREIZEITMANAGER_PUBLIC_KEY: ${{ vars.FREIZEITMANAGER_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.check.outputs.version }}"
+          KEY_ARG=""
+          if [ -n "${FREIZEITMANAGER_PUBLIC_KEY:-}" ]; then
+            KEY_ARG="--public-key-env FREIZEITMANAGER_PUBLIC_KEY"
+          fi
+          for platform in linux-x86_64 windows-x86_64; do
+            case "$platform" in
+              linux-x86_64)   suffix=Linux_x86_64 ;;
+              windows-x86_64) suffix=Windows_x86_64 ;;
+            esac
+            python tools/verify_lpmodule.py \
+              "dist/freizeitmanager_${VERSION}_${suffix}.lpmodule" \
+              --expect-version "$VERSION" \
+              --expect-platform "$platform" \
+              $KEY_ARG
+          done
+
+      - name: Prüfsummen
+        run: |
+          cd dist
+          sha256sum *.lpmodule | tee SHA256SUMS.txt
+
+      - name: Release veroeffentlichen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: FreizeitManager ${{ needs.check.outputs.version }}
+          body_path: CHANGELOG.md
+          files: |
+            dist/*.lpmodule
+            dist/SHA256SUMS.txt
+          fail_on_unmatched_files: true

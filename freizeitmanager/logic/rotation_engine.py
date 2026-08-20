@@ -20,12 +20,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from freizeitmanager.database import db
-from freizeitmanager.database.models import (KIND_CALL, KIND_CALL_LONG,
-                                             KIND_MEET, KIND_MESSAGE, Contact,
-                                             RotationState)
+from freizeitmanager.database.models import (
+    KIND_CALL,
+    KIND_MEET,
+    KIND_MESSAGE,
+    Contact,
+    RotationState,
+)
 from freizeitmanager.logic import rule_engine
-from freizeitmanager.logic.freshness import (FreshnessResult, InteractionFact,
-                                             compute_freshness, describe_gap)
+from freizeitmanager.logic.freshness import FreshnessResult, InteractionFact, compute_freshness, describe_gap
 
 _log = logging.getLogger(__name__)
 

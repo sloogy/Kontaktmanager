@@ -11,9 +11,7 @@ from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from freizeitmanager import paths
-from freizeitmanager.database.models import (AppSetting, Base, Group,
-                                             RelationshipLevel,
-                                             SchemaMigration)
+from freizeitmanager.database.models import AppSetting, Base, Group, RelationshipLevel, SchemaMigration
 
 _log = logging.getLogger(__name__)
 

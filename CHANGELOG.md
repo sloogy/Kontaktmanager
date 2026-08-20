@@ -1,3 +1,59 @@
+# v0.1.1 – RELEASE-PIPELINE UND INSTALLIERBARE MODULE
+
+0.1.0 lieferte nur Quellcode aus. Ab dieser Version entsteht bei jedem Tag ein
+installierbares LifePlanner-Modul für Linux und Windows.
+
+## Pipeline
+
+- `.github/workflows/ci.yml` prüft bei jedem Push Version, Linting, Tests und
+  einen GUI-Rauchtest.
+- `.github/workflows/release.yml` läuft auf einen Tag `v*` in drei Stufen:
+  **prüfen** (Tag, `version.json`, `app_info` und `module.json` müssen
+  übereinstimmen; Linting, Tests, Rauchtest), **bauen** (PyInstaller auf Linux
+  und Windows), **veröffentlichen** (Module packen, gegen den Host-Vertrag
+  prüfen, Prüfsummen, Release).
+- Gebaut wird nur, was vorher geprüft wurde. Veröffentlicht wird nur, was
+  `tools/verify_lpmodule.py` akzeptiert.
+
+## Werkzeuge
+
+- `tools/sync_version.py` – die Version steht nur in `version.json`; alles
+  andere wird abgeleitet. `--check --expect-tag` bricht ab, bevor ein Paket mit
+  falscher Version entsteht.
+- `tools/build_lifeplanner_module.py` – packt eine gebaute Runtime als
+  `.lpmodule` (`component.json` im Schema `lifeplanner.component.v1`,
+  `payload/`, `payload_sha256`). Das Ausführbit wird direkt ins Archiv
+  geschrieben, weil CI-Artefakte Unix-Rechte verlieren und das Linux-Paket auf
+  einem Windows-Runner entstehen kann. Ohne das startet das installierte Modul
+  mit „[Errno 13] Keine Berechtigung“.
+- `tools/verify_lpmodule.py` – prüft das fertige Archiv so, wie der LifePlanner
+  es prüfen würde: Schema, Version, Plattform, Programm vorhanden und
+  ausführbar, `payload_sha256` über den tatsächlichen Inhalt.
+- `tools/gui_smoke_test.py` und `main.py --smoke` – das gebaute Programm baut
+  Datenbank und Fenster auf und beendet sich. Das fängt fehlende
+  PyInstaller-Importe ab: das häufigste Muster, bei dem ein Paket entsteht,
+  beim Doppelklick aber nichts passiert.
+
+## Signatur
+
+Ed25519 ist vorbereitet, aber optional. Ohne hinterlegten Schlüssel entstehen
+sichtbar unsignierte Pakete, die der Host erst nach manueller Bestätigung
+annimmt. Ist ein Schlüssel gesetzt, wird `component.json` signiert und die
+Pipeline prüft die Signatur vor dem Hochladen.
+
+## Verworfene Optimierung
+
+Ein Filter, der ungenutzte Qt-Bibliotheken (Quick, QML, PDF) aus dem Paket
+strich, sparte 15 Prozent Größe – hinterließ aber Symlinks, die ins Leere
+zeigten. Die Anwendung startete trotzdem, weil sie diese Bibliotheken nie lädt;
+der Defekt fiel erst beim Packen auf. Der Filter ist entfernt. Stattdessen
+bricht der Paketierer jetzt ab, wenn eine Runtime baumelnde Symlinks enthält.
+
+## Sonstiges
+
+- `ruff.toml` pinnt die Regelauswahl, damit lokale Läufe und CI dasselbe sagen.
+- 49 Tests, davon 15 zur Paketierung.
+
 # v0.1.0 – FREIZEITMANAGER: KONTAKTROTATION MIT BEZIEHUNGSFRISCHE
 
 Erster Stand des FreizeitManagers. Der bisherige Kontaktmanager liegt unter

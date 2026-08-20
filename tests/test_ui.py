@@ -13,11 +13,10 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
-from PySide6.QtWidgets import QApplication  # noqa: E402
+from PySide6.QtWidgets import QApplication
 
-from freizeitmanager.database.models import (Contact, Interaction,   # noqa: E402
-                                             RotationSnooze)
-from freizeitmanager.logic import contact_service as cs             # noqa: E402
+from freizeitmanager.database.models import Interaction, RotationSnooze
+from freizeitmanager.logic import contact_service as cs
 
 
 @pytest.fixture(scope="session")
@@ -90,8 +89,8 @@ def test_reroll_zeigt_andere_personen(qapp, session):
 
 
 def test_energiewahl_aendert_den_vorschlag(qapp, seeded):
-    from freizeitmanager.ui.dashboard_widget import DashboardWidget
     from freizeitmanager.logic import rotation_engine as rot
+    from freizeitmanager.ui.dashboard_widget import DashboardWidget
     widget = DashboardWidget()
 
     social = next(b for b in widget._energy_group.buttons() if b.property("energy") == rot.ENERGY_SOCIAL)

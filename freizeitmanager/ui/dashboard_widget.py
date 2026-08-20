@@ -10,20 +10,26 @@ wie viele Kandidaten die Engine kennt.
 """
 from __future__ import annotations
 
-from datetime import date
-
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtWidgets import (QButtonGroup, QFrame, QGridLayout, QGroupBox,
-                               QHBoxLayout, QLabel, QPushButton, QScrollArea,
-                               QSizePolicy, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QButtonGroup,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from freizeitmanager.database import db
 from freizeitmanager.database.models import Contact
+from freizeitmanager.integration import lifeplanner_bridge as bridge
 from freizeitmanager.logic import contact_service as cs
 from freizeitmanager.logic import dashboard_service as dash
 from freizeitmanager.logic import rotation_engine as rot
 from freizeitmanager.logic.event_bus import AppEventBus
-from freizeitmanager.integration import lifeplanner_bridge as bridge
 from freizeitmanager.ui import theme
 from freizeitmanager.ui.common import CalmCard, FocusTile, NextStepCard
 from freizeitmanager.ui.dialogs import PlanActivityDialog

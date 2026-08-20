@@ -6,20 +6,29 @@ Expertenmodus.
 """
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QAbstractItemView, QHBoxLayout, QHeaderView,
-                               QLabel, QLineEdit, QMenu, QMessageBox,
-                               QPushButton, QTableWidget, QTableWidgetItem,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from freizeitmanager.database import db
-from freizeitmanager.database.models import (Contact, Group, RelationshipLevel,
-                                             STATUS_ARCHIVED)
+from freizeitmanager.database.models import STATUS_ARCHIVED, Contact, Group, RelationshipLevel
+from freizeitmanager.integration import lifeplanner_bridge as bridge
 from freizeitmanager.logic import contact_service as cs
 from freizeitmanager.logic import rotation_engine as rot
 from freizeitmanager.logic.event_bus import AppEventBus
-from freizeitmanager.integration import lifeplanner_bridge as bridge
 from freizeitmanager.ui import theme
 from freizeitmanager.ui.dialogs import ContactDialog, LogInteractionDialog
 
@@ -152,8 +161,10 @@ class ContactsWidget(QWidget):
 
     # ── Aktionen ─────────────────────────────────────────────────────────────
     def _lists(self, session) -> tuple[list[str], list[str]]:
-        levels = [l.name for l in session.query(RelationshipLevel).order_by(RelationshipLevel.sort_order)]
-        groups = [g.name for g in session.query(Group).order_by(Group.sort_order, Group.name)]
+        levels = [row.name for row in
+                  session.query(RelationshipLevel).order_by(RelationshipLevel.sort_order)]
+        groups = [row.name for row in
+                  session.query(Group).order_by(Group.sort_order, Group.name)]
         return levels, groups
 
     def _create(self) -> None:

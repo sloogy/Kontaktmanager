@@ -2,12 +2,21 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-from freizeitmanager.database.models import (KIND_CALL_LONG, KIND_MEET,
-                                             KIND_MEET_LONG, KIND_REACTION,
-                                             QUALITY_INTENSE, QUALITY_SHORT)
-from freizeitmanager.logic.freshness import (MAX_FRESHNESS, InteractionFact,
-                                             compute_freshness,
-                                             describe_gap, interaction_impact)
+from freizeitmanager.database.models import (
+    KIND_CALL_LONG,
+    KIND_MEET,
+    KIND_MEET_LONG,
+    KIND_REACTION,
+    QUALITY_INTENSE,
+    QUALITY_SHORT,
+)
+from freizeitmanager.logic.freshness import (
+    MAX_FRESHNESS,
+    InteractionFact,
+    compute_freshness,
+    describe_gap,
+    interaction_impact,
+)
 
 TODAY = date(2026, 8, 20)
 

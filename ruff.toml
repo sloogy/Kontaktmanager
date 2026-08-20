@@ -1,0 +1,16 @@
+# Feste Regelauswahl, damit lokale Prueflaeufe und CI dasselbe sagen -
+# unabhaengig von einer globalen Ruff-Konfiguration auf dem Entwicklerrechner.
+line-length = 110
+target-version = "py311"
+
+[lint]
+# Echte Fehler plus toter Code und Importordnung. Bewusst NICHT dabei:
+# DTZ (Zeitzonen) - der FreizeitManager rechnet absichtlich in lokalen
+# Kalendertagen, eine UTC-Pflicht waere hier schlicht falsch.
+select = ["E4", "E7", "E9", "F", "I", "UP", "SIM", "RUF100"]
+ignore = [
+    "E402",    # Importe nach sys.path-Anpassung sind in Werkzeugen noetig
+]
+
+[lint.per-file-ignores]
+"FreizeitManager.spec" = ["F821"]   # PyInstaller stellt SPECPATH global bereit
