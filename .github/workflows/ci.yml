@@ -1,8 +1,9 @@
 name: CI
 
+# Laeuft bewusst nicht auf Push nach main: beim Release werden main und Tag
+# zusammen gepusht, was sonst zwei parallele Laeufe fuer denselben Stand ergibt.
+# Die vollstaendigen Gates laufen im taggesteuerten Release-Workflow.
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
