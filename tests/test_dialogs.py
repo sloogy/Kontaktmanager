@@ -93,3 +93,51 @@ def test_leerer_name_wird_nicht_angenommen(qapp, session):
     dialog.name.setText("   ")
     dialog._accept_if_valid()
     assert dialog.result() != ContactDialog.DialogCode.Accepted
+
+
+# ── Geburtstag im Kontaktformular ────────────────────────────────────────────
+
+def test_ohne_angabe_bleibt_der_geburtstag_leer(qapp, session):
+    """Ein QDateEdit hat immer ein Datum - leer muss trotzdem leer bleiben."""
+    from freizeitmanager.ui.dialogs import ContactDialog
+    dialog = ContactDialog([], [])
+    values = dialog.values()
+    assert values["birthday"] is None
+    assert values["birthday_has_year"] is True
+
+
+def test_geburtstag_mit_jahrgang_geht_hin_und_zurueck(qapp, session):
+    from freizeitmanager.ui.dialogs import ContactDialog
+    contact = cs.create_contact(session, "Marko", birthday=date(1984, 3, 17))
+    session.commit()
+    dialog = ContactDialog([], [], contact=contact)
+    assert dialog.values()["birthday"] == date(1984, 3, 17)
+    assert dialog.values()["birthday_has_year"] is True
+    assert not dialog.no_year.isChecked()
+
+
+def test_unbekannter_jahrgang_behaelt_tag_und_monat(qapp, session):
+    """Ohne Jahrgang darf kein Jahr erfunden werden - und keines verloren gehen."""
+    from freizeitmanager.logic.contact_import import YEAR_UNKNOWN
+    from freizeitmanager.ui.dialogs import ContactDialog
+    contact = cs.create_contact(session, "Nadine", birthday=date(YEAR_UNKNOWN, 6, 5),
+                                birthday_has_year=False)
+    session.commit()
+    dialog = ContactDialog([], [], contact=contact)
+    assert dialog.no_year.isChecked()
+    assert dialog.birthday.displayFormat() == "dd.MM."
+    values = dialog.values()
+    assert values["birthday"] == date(YEAR_UNKNOWN, 6, 5)
+    assert values["birthday_has_year"] is False
+
+
+def test_jahrgang_abwaehlen_setzt_das_jahr_auf_unbekannt(qapp, session):
+    from freizeitmanager.logic.contact_import import YEAR_UNKNOWN
+    from freizeitmanager.ui.dialogs import ContactDialog
+    contact = cs.create_contact(session, "Marko", birthday=date(1984, 3, 17))
+    session.commit()
+    dialog = ContactDialog([], [], contact=contact)
+    dialog.no_year.setChecked(True)
+    values = dialog.values()
+    assert values["birthday"] == date(YEAR_UNKNOWN, 3, 17)
+    assert values["birthday_has_year"] is False

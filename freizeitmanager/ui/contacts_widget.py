@@ -78,6 +78,13 @@ class ContactsWidget(QWidget):
         self._log_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._log_button.clicked.connect(self._log_selected)
         bar.addWidget(self._log_button)
+
+        self._import_button = QPushButton(t("contacts.import"))
+        self._import_button.setStyleSheet(theme.btn_secondary())
+        self._import_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._import_button.setToolTip(t("import.tooltip"))
+        self._import_button.clicked.connect(self._import_contacts)
+        bar.addWidget(self._import_button)
         layout.addLayout(bar)
 
         self._table = QTableWidget(0, len(COLUMN_KEYS))
@@ -196,6 +203,8 @@ class ContactsWidget(QWidget):
             contact.interval_flex_days = values["interval_flex_days"]
             contact.status = values["status"]
             contact.notes = values["notes"]
+            contact.birthday = values["birthday"]
+            contact.birthday_has_year = values["birthday_has_year"]
             for attr in ("wants_meeting", "wants_call", "wants_message",
                          "prefers_weekday", "prefers_weekend"):
                 setattr(contact, attr, values[attr])
@@ -211,6 +220,12 @@ class ContactsWidget(QWidget):
                 if tag is not None:
                     contact.tags.append(tag)
         AppEventBus.instance().emit_contacts()
+
+    def _import_contacts(self) -> None:
+        """Liste aus CSV oder Excel einlesen. Der Dialog schreibt selbst."""
+        from freizeitmanager.ui.import_dialog import run_import
+        run_import(self, db.get_session,
+                   on_done=lambda _result: AppEventBus.instance().emit_contacts())
 
     def _log_selected(self, kind: str | None = None) -> None:
         contact_id = self._selected_id()

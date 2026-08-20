@@ -15,7 +15,7 @@ from freizeitmanager.database.models import AppSetting, Base, Group, Relationshi
 
 _log = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 _engine = None
 _SessionFactory = None
@@ -97,6 +97,7 @@ def initialize_database() -> None:
     """Schema anlegen, Migrationen fahren, Standardwerte ergaenzen."""
     engine = get_engine()
     Base.metadata.create_all(engine)
+    _add_missing_columns(engine)
     with get_session() as s:
         applied = {row.version for row in s.scalars(select(SchemaMigration))}
         if SCHEMA_VERSION not in applied:
@@ -104,6 +105,30 @@ def initialize_database() -> None:
         _seed_settings(s)
         _seed_levels(s)
         _seed_groups(s)
+
+
+# Spalten, die nach dem ersten Release dazugekommen sind. create_all() legt
+# nur fehlende Tabellen an, niemals fehlende Spalten - eine bestehende Datenbank
+# braucht daher ein ausdrueckliches ALTER TABLE.
+_ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
+    ("contacts", "birthday", "DATE"),
+    ("contacts", "birthday_has_year", "BOOLEAN NOT NULL DEFAULT 1"),
+)
+
+
+def _add_missing_columns(engine) -> list[str]:
+    """Ruestet fehlende Spalten nach. Idempotent und ohne Datenverlust."""
+    added: list[str] = []
+    with engine.begin() as conn:
+        for table, column, ddl in _ADDED_COLUMNS:
+            rows = conn.exec_driver_sql(f"PRAGMA table_info({table})").fetchall()
+            if not rows:
+                continue  # Tabelle gibt es (noch) nicht.
+            if any(row[1] == column for row in rows):
+                continue
+            conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+            added.append(f"{table}.{column}")
+    return added
 
 
 def _seed_settings(s: Session) -> None:

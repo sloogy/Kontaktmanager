@@ -34,6 +34,9 @@ datas = [
       for path in sorted((ROOT / "freizeitmanager" / "ui" / "profiles").glob("*.json"))],
     (str(ROOT / "version.json"), "."),
     (str(ROOT / "module.json"), "."),
+    # Das Handbuch wird aus der Anwendung heraus geoeffnet - fehlt es im
+    # Paket, fuehrt der Knopf in der Hilfe ins Leere.
+    (str(ROOT / "docs" / "help" / "index.html"), "docs/help"),
     (str(ROOT / "README.md"), "."),
     (str(ROOT / "CHANGELOG.md"), "."),
 ]

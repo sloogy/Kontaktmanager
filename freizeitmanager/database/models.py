@@ -112,6 +112,12 @@ class Contact(Base):
     name = Column(String(120), nullable=False)
     relationship_level_id = Column(ForeignKey("relationship_levels.id", ondelete="SET NULL"), nullable=True)
 
+    # Geburtstag. Optional, weil er bei vielen Kontakten schlicht unbekannt ist.
+    # Ein Jahrgang ist nicht verpflichtend: Wer nur Tag und Monat kennt, traegt
+    # das Jahr als 1900 ein - siehe birthday_has_year.
+    birthday = Column(Date, nullable=True)
+    birthday_has_year = Column(Boolean, default=True, nullable=False)
+
     # Wichtigkeit 1 (lose Bekanntschaft) bis 5 (engster Mensch).
     importance = Column(Integer, default=3, nullable=False)
     # Gewuenschter Kontaktrhythmus in Tagen - bewusst unabhaengig von importance.

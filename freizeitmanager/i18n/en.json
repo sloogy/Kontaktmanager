@@ -61,7 +61,10 @@
     "energy_social": "up for people",
     "calm": "Everything is fine. Nothing urgent right now.",
     "welcome_back": "Good to see you back. These contacts would make sense now.",
-    "all_done": "Everything is done for today. New suggestions tomorrow."
+    "all_done": "Everything is done for today. New suggestions tomorrow.",
+    "birthdays": "Birthdays",
+    "birthday_today": "Today",
+    "birthday_turns": "{name} turns {age}"
   },
   "step": {
     "why": "Why?",
@@ -145,7 +148,8 @@
     "menu_edit": "Edit …",
     "menu_wish": "I want to see them soon",
     "menu_snooze": "Pause for 30 days",
-    "menu_archive": "Archive"
+    "menu_archive": "Archive",
+    "import": "Import …"
   },
   "contact": {
     "new_title": "New contact",
@@ -167,7 +171,55 @@
     "groups": "Groups",
     "tags": "Tags",
     "tags_placeholder": "Board games, food, spontaneous – separated by commas",
-    "notes": "Notes"
+    "notes": "Notes",
+    "birthday": "Birthday",
+    "birthday_none": "no birthday on file",
+    "birthday_no_year": "year unknown"
+  },
+  "import": {
+    "title": "Import contact list",
+    "tooltip": "Take contacts from a CSV or Excel file",
+    "choose_file": "Choose the file with the contact list",
+    "file_filter": "Spreadsheets",
+    "source": "From {file}",
+    "summary": "{new} new contacts, {conflicts} names already exist, {unusable} rows without a name. {birthdays} birthdays recognised.",
+    "detected": "Detected columns: {columns}",
+    "col_name": "Name",
+    "col_birthday": "Birthday",
+    "col_group": "Group",
+    "col_state": "Finding",
+    "col_action": "What to do?",
+    "field_name": "Name",
+    "field_first_name": "First name",
+    "field_last_name": "Last name",
+    "field_birthday": "Birthday",
+    "field_notes": "Notes",
+    "field_group": "Group",
+    "field_email": "Email",
+    "field_phone": "Phone",
+    "state_new": "new",
+    "state_conflict": "name already exists",
+    "action_create": "Create",
+    "action_fill": "Fill empty fields",
+    "action_skip": "Skip",
+    "all_fill": "Fill all existing ones",
+    "all_skip_conflicts": "Skip all existing ones",
+    "apply": "Import",
+    "apply_count": "Import {count} rows",
+    "done": "{created} created, {filled} filled in, {skipped} skipped.",
+    "unreadable": "The file cannot be read as a table: {error}",
+    "no_name_column": "No name column could be detected. Expected a column 'Name' or 'First name' and 'Last name'.",
+    "empty_file": "Apart from the header row the file contains no data.",
+    "problem_no_name": "No name in this row",
+    "problem_bad_date": "Date not readable: {value}",
+    "problem_future_date": "Date lies in the future: {value}",
+    "error_unsupported": "Unsupported format: {suffix}. CSV and Excel (.xlsx) can be read.",
+    "error_encoding": "The character set of the file cannot be determined.",
+    "error_empty": "The file is empty.",
+    "error_no_rows": "The file contains no rows.",
+    "error_needs_openpyxl": "Excel files require openpyxl. Alternatively save the file as CSV.",
+    "error_excel_unreadable": "The Excel file cannot be read: {detail}",
+    "error_sheet_empty": "The worksheet contains no rows."
   },
   "importance": {
     "5": "A – closest person",
@@ -287,5 +339,55 @@
     "context": "context",
     "rotation": "rotation",
     "wish": "wish"
+  },
+  "help": {
+    "title": "Help",
+    "search": "Search the help …",
+    "no_match": "No topic matches this search.",
+    "handbook": "Open handbook",
+    "handbook_missing": "The handbook is not included in this installation.",
+    "button": "Help",
+    "topics": {
+      "first_steps": {
+        "title": "Getting started",
+        "body": "The FreizeitManager answers a single question: <b>Who would I like to be in touch with again right now?</b> It is not an address book and not a to-do list. Nothing here creates debt.\n\nThe quickest start: create contacts or import an existing list. For each person you set how important they are to you and how often you would like to be in touch. Everything else follows from what you actually record.\n\nAfter that the cockpit is enough. It shows at most three suggestions – experience shows that more creates pressure instead of clarity."
+      },
+      "import": {
+        "title": "Importing a list",
+        "body": "Under <b>Contacts → Import</b> you take over an existing list of people from a CSV or Excel file (.xlsx). The columns need no fixed order: the import recognises headers such as name, first name, last name, birthday, group, notes, email and phone by itself, in German as well as in English.\n\nBefore anything is written you see a <b>preview</b>. There you decide row by row what should happen. Names that already exist are set to “skip” – for them “create” is not even offered. If you choose “fill empty fields”, only what is still missing on the existing contact is entered. Existing entries are never overwritten.\n\nBirthdays are taken over even when the file holds no year: day and month are kept, the age is then simply not shown. Two-digit years never land in the future – “65” becomes 1965.\n\nRows without a name are skipped and counted in the summary. An unreadable cell never brings down the whole import."
+      },
+      "cockpit": {
+        "title": "The cockpit",
+        "body": "<b>Today</b> is the start screen. It does not answer “how does everything stand?” but “what would be due now?”.\n\nThe four tiles show how many contacts would fit right now, would be due this week, are already arranged and are resting. Below them your next steps appear as cards with quick actions: record, plan, postpone or mark as a wish.\n\n<b>Other suggestions</b> exchanges the cards without showing the same people again straight away.\n\nAt the top you choose your energy state for today: low energy, normal or up for people. It shifts the suggestions towards short or more extensive contact and applies to this day only.\n\nIf nothing is pressing, the cockpit says so – instead of showing an empty table."
+      },
+      "contacts": {
+        "title": "Contacts and rhythm",
+        "body": "Every contact has two separate settings that are often confused:\n\n<b>Importance</b> (A to E) says how close the person is to you. <b>Contact every … days</b> says how often you would like to be in touch. The two are related but do not determine each other: someone close whom you see twice a year is still someone close.\n\nThe <b>tolerance</b> is the leeway around that rhythm. Only beyond it is a contact treated as overdue.\n\nThe <b>relationship level</b> is a template: choose one and new contacts inherit its importance and rhythm.\n\nThe <b>status</b> governs the rotation: active and “less contact right now” take part, “not in the rotation” stays on record but is never suggested, “paused” suspends until a date, “archived” disappears from everyday use.\n\nUnder <b>How is contact welcome?</b> and <b>When does it usually fit?</b> you record what suits the person – suggestions follow that."
+      },
+      "logging": {
+        "title": "Recording contact",
+        "body": "A contact is recorded with one click: on the card in the cockpit or via <b>Record</b> in the contact list. You are only asked back if you want to add more.\n\nThe <b>kind</b> ranges from a long meeting to a brief reaction. It determines how long the contact resonates: a long evening carries further than a thumbs-up under a picture.\n\nThe <b>quality</b> (short, normal, intense) strengthens or dampens that effect, the <b>duration</b> is optional.\n\nEvery recorded contact ends a postponement. There is deliberately no “last meeting” field: the history grows from what you record, and only from it can freshness be derived."
+      },
+      "freshness": {
+        "title": "Freshness and rotation",
+        "body": "From the recorded contacts a <b>freshness</b> follows for every person: all good, soon again, a good moment now, quiet for a long time. This grading – not a score – drives the suggestions.\n\nSuggestions are held back when something speaks against them: contact just happened (cooldown after contact), a date is already planned, the contact is paused or postponed, or your social capacity for this week is reached. The cockpit names these reasons in plain words.\n\nThe <b>social capacity</b> in the settings limits how many social days per week are suggested. It is a protection against overload, not a target.\n\nThe <b>rotation</b> area shows the full evaluation of all contacts including the reasoning. Everyday use does not need it – it makes clear why something is suggested. You find it in expert mode."
+      },
+      "birthdays": {
+        "title": "Birthdays",
+        "body": "Contacts can have a birthday. The cockpit shows the birthdays coming up in the next 30 days; today's is highlighted.\n\nIf the <b>year is unknown</b>, tick the corresponding box in the contact form. Day and month are then kept, but no age is shown and no year is invented.\n\nA birthday on 29 February is shown on 28 February in ordinary years so that it stays in February.\n\nArchived contacts do not appear here."
+      },
+      "activities": {
+        "title": "Planning dates",
+        "body": "Via <b>Plan</b> on a suggestion card you arrange a date and take the suggested person along right away. Several participants are possible.\n\nPlanned dates of the next two weeks appear in the cockpit under <b>Planned</b>. As long as a date stands, the person is not suggested again.\n\nOnce the date has taken place it becomes a real contact entry for all participants – you do not have to record it twice."
+      },
+      "modes": {
+        "title": "Simple mode and expert mode",
+        "body": "The FreizeitManager starts in <b>simple mode</b>: cockpit, contacts and settings. That is enough for everyday use.\n\n<b>Expert mode</b> additionally shows the rotation and reveals the numbers behind the gradings in cards and lists. You switch at the bottom of the sidebar or with <b>Ctrl+E</b>.\n\nFurther shortcuts: <b>Ctrl+N</b> creates a contact, <b>F1</b> opens this help."
+      },
+      "settings": {
+        "title": "Settings, language and backup",
+        "body": "Under <b>Settings</b> you set how many suggestions the cockpit shows, how long things rest after a contact and how many social days per week suit you.\n\n<b>Language</b> applies immediately, without a restart – German, English and French.\n\nUnder <b>Appearance</b> you choose a design profile and the font size. If the FreizeitManager runs inside the LifePlanner, it can adopt the profile set centrally there.\n\n<b>Create backup</b> stores a copy of the database. The data folder is named on the same page.\n\nIf the FreizeitManager is connected to the LifePlanner, on request it passes on counts and next steps only – never notes."
+      }
+    }
   }
 }

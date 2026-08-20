@@ -136,6 +136,11 @@ class DashboardWidget(QWidget):
         self._planned_layout.setContentsMargins(14, 8, 14, 12)
         layout.addWidget(self._planned_group)
 
+        self._birthday_group = QGroupBox(t("cockpit.birthdays"))
+        self._birthday_layout = QVBoxLayout(self._birthday_group)
+        self._birthday_layout.setContentsMargins(14, 8, 14, 12)
+        layout.addWidget(self._birthday_group)
+
         layout.addStretch(1)
 
     def _build_energy_chips(self) -> QHBoxLayout:
@@ -211,6 +216,15 @@ class DashboardWidget(QWidget):
             label = QLabel(f"\N{BULLET}  {plan.label()}")
             label.setStyleSheet("border:none;")
             self._planned_layout.addWidget(label)
+
+        self._clear_layout(self._birthday_layout)
+        self._birthday_group.setVisible(bool(cockpit.birthdays))
+        for birthday in cockpit.birthdays:
+            label = QLabel(f"\N{BIRTHDAY CAKE}  {birthday.label()}")
+            # Der Geburtstag von heute wird hervorgehoben, der Rest bleibt ruhig.
+            label.setStyleSheet(f"border:none; color:{theme.color('erfolg')};"
+                                if birthday.is_today else "border:none;")
+            self._birthday_layout.addWidget(label)
 
         self._sync_responsive_layout()
 

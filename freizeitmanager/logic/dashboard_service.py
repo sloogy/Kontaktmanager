@@ -17,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from freizeitmanager.database import db
-from freizeitmanager.database.models import PlannedActivity
+from freizeitmanager.database.models import STATUS_ARCHIVED, Contact, PlannedActivity
 from freizeitmanager.logic import rotation_engine as rot
 from freizeitmanager.logic.rule_engine import load_capacity
 
@@ -46,6 +46,24 @@ class UpcomingPlan:
 
 
 @dataclass
+class Birthday:
+    """Ein anstehender Geburtstag - mit Alter nur, wenn der Jahrgang echt ist."""
+    contact_id: int
+    name: str
+    on: date              # das naechste Vorkommen, nicht das Geburtsjahr
+    turns: int | None = None
+    is_today: bool = False
+
+    def label(self) -> str:
+        from freizeitmanager.i18n.translator import format_short_date, t, weekday_name
+        when = t("cockpit.birthday_today") if self.is_today else \
+            f"{weekday_name(self.on)} {format_short_date(self.on)}"
+        who = self.name if self.turns is None else \
+            t("cockpit.birthday_turns", name=self.name, age=self.turns)
+        return f"{when} \N{MIDDLE DOT} {who}"
+
+
+@dataclass
 class FocusSummary:
     """Die vier Kacheln oben - mehr Zahlen bekommt der Startbildschirm nicht."""
     due_now: int = 0
@@ -71,6 +89,7 @@ class Cockpit:
     summary: FocusSummary
     next_steps: list[rot.Candidate] = field(default_factory=list)
     upcoming: list[UpcomingPlan] = field(default_factory=list)
+    birthdays: list[Birthday] = field(default_factory=list)
     message: str = ""
 
 
@@ -84,6 +103,38 @@ def _upcoming(session: Session, today: date, days: int = 14) -> list[UpcomingPla
         .order_by(PlannedActivity.planned_date)).all()
     return [UpcomingPlan(r.id, r.title, r.planned_date, [c.name for c in r.participants])
             for r in rows]
+
+
+def _next_occurrence(birthday: date, today: date) -> date:
+    """Der naechste Geburtstag ab heute - heute zaehlt noch dazu.
+
+    Der 29. Februar faellt in normalen Jahren auf den 28.; so bleibt der
+    Geburtstag im Februar, statt in den Maerz zu rutschen.
+    """
+    def _on(year: int) -> date:
+        try:
+            return date(year, birthday.month, birthday.day)
+        except ValueError:
+            return date(year, 2, 28)
+
+    this_year = _on(today.year)
+    return this_year if this_year >= today else _on(today.year + 1)
+
+
+def _birthdays(session: Session, today: date, days: int = 30) -> list[Birthday]:
+    """Anstehende Geburtstage im Zeitfenster, archivierte Kontakte ausgenommen."""
+    rows = session.scalars(
+        select(Contact).where(Contact.birthday.is_not(None),
+                              Contact.status != STATUS_ARCHIVED)).all()
+    horizon = today + timedelta(days=days)
+    found = []
+    for contact in rows:
+        when = _next_occurrence(contact.birthday, today)
+        if when > horizon:
+            continue
+        turns = when.year - contact.birthday.year if contact.birthday_has_year else None
+        found.append(Birthday(contact.id, contact.name, when, turns, when == today))
+    return sorted(found, key=lambda b: (b.on, b.name))
 
 
 def build_cockpit(session: Session, *, today: date | None = None,
@@ -125,7 +176,8 @@ def build_cockpit(session: Session, *, today: date | None = None,
         message = ""
 
     return Cockpit(summary=summary, next_steps=focus,
-                   upcoming=_upcoming(session, today), message=message)
+                   upcoming=_upcoming(session, today),
+                   birthdays=_birthdays(session, today), message=message)
 
 
 def reroll(session: Session, current: list[rot.Candidate], *,

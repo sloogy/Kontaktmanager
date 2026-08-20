@@ -69,6 +69,7 @@ class MainWindow(QMainWindow):
 
         QShortcut(QKeySequence("Ctrl+N"), self, self._contacts._create)
         QShortcut(QKeySequence("Ctrl+E"), self, self._toggle_mode)
+        QShortcut(QKeySequence("F1"), self, self.open_help)
 
         bus = AppEventBus.instance()
         bus.language_changed.connect(self._rebuild_for_language)
@@ -98,6 +99,12 @@ class MainWindow(QMainWindow):
             layout.addWidget(button)
 
         layout.addStretch(1)
+        self._help_button = QPushButton(t("help.button"))
+        self._help_button.setObjectName("navButton")
+        self._help_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._help_button.clicked.connect(self.open_help)
+        layout.addWidget(self._help_button)
+
         self._mode_button = QPushButton("")
         self._mode_button.setObjectName("modeToggle")
         self._mode_button.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -139,6 +146,7 @@ class MainWindow(QMainWindow):
         """
         for key, label_key, _ in PAGES:
             self._nav_buttons[key].setText(t(label_key))
+        self._help_button.setText(t("help.button"))
         self._rebuild_pages()
 
     def _rebuild_pages(self) -> None:
@@ -165,6 +173,11 @@ class MainWindow(QMainWindow):
         self._dashboard.open_contact.connect(self._open_contact)
         self._apply_mode()
         self.show_page(current)
+
+    def open_help(self, topic: str | None = None) -> None:
+        """F1 und der Knopf in der Seitenleiste fuehren an dieselbe Stelle."""
+        from freizeitmanager.ui.help_dialog import HelpDialog
+        HelpDialog(topic, self).exec()
 
     def show_page(self, key: str) -> None:
         widget = self._pages.get(key)

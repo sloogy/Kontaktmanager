@@ -1,6 +1,8 @@
 """Dialoge: Kontakt anlegen/bearbeiten, Termin planen, Kontakt nachtragen."""
 from __future__ import annotations
 
+from datetime import date
+
 from PySide6.QtCore import QDate, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -38,6 +40,7 @@ from freizeitmanager.database.models import (
     STATUS_PAUSED,
 )
 from freizeitmanager.i18n.translator import t
+from freizeitmanager.logic.contact_import import YEAR_UNKNOWN
 
 # Auswahllisten werden ueber Schluessel gefuehrt und erst beim Aufbau des
 # Dialogs uebersetzt - so wirkt ein Sprachwechsel sofort.
@@ -46,6 +49,10 @@ KIND_ORDER = (KIND_MEET, KIND_MEET_LONG, KIND_CALL, KIND_CALL_LONG,
 QUALITY_ORDER = (QUALITY_SHORT, QUALITY_NORMAL, QUALITY_INTENSE)
 STATUS_ORDER = (STATUS_ACTIVE, STATUS_LOW, STATUS_NO_ROTATION, STATUS_PAUSED, STATUS_ARCHIVED)
 IMPORTANCE_ORDER = (5, 4, 3, 2, 1)
+
+# Ein QDateEdit kennt keinen leeren Zustand. Das Minimaldatum dient deshalb als
+# "kein Geburtstag hinterlegt" und wird ueber setSpecialValueText beschriftet.
+NO_BIRTHDAY = QDate(1800, 1, 1)
 
 
 def kind_choices(limit: int | None = None) -> list[tuple[str, str]]:
@@ -222,12 +229,34 @@ class ContactDialog(QDialog):
         self.status = QComboBox()
         _fill(self.status, status_choices(), contact.status if contact else STATUS_ACTIVE)
 
+        self.birthday = QDateEdit()
+        self.birthday.setCalendarPopup(True)
+        self.birthday.setMinimumDate(NO_BIRTHDAY)
+        self.birthday.setMaximumDate(QDate.currentDate())
+        self.birthday.setSpecialValueText(t("contact.birthday_none"))
+        self.no_year = QCheckBox(t("contact.birthday_no_year"))
+        self.no_year.toggled.connect(self._apply_birthday_format)
+
+        existing = getattr(contact, "birthday", None) if contact else None
+        if existing is not None:
+            self.birthday.setDate(QDate(existing.year, existing.month, existing.day))
+            self.no_year.setChecked(not contact.birthday_has_year)
+        else:
+            self.birthday.setDate(NO_BIRTHDAY)
+        self._apply_birthday_format(self.no_year.isChecked())
+
+        birthday_row = QHBoxLayout()
+        birthday_row.setContentsMargins(0, 0, 0, 0)
+        birthday_row.addWidget(self.birthday, 1)
+        birthday_row.addWidget(self.no_year)
+
         form.addRow(t("contact.name"), self.name)
         form.addRow(t("contact.level"), self.level)
         form.addRow(t("contact.importance"), self.importance)
         form.addRow(t("contact.interval"), self.interval)
         form.addRow(t("contact.flex"), self.flex)
         form.addRow(t("contact.status"), self.status)
+        form.addRow(t("contact.birthday"), birthday_row)
         layout.addLayout(form)
 
         channels = QGroupBox(t("contact.channels"))
@@ -280,6 +309,23 @@ class ContactDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
+    def _apply_birthday_format(self, no_year: bool) -> None:
+        """Ohne Jahrgang wird das Jahr auch nicht angezeigt.
+
+        Gespeichert wird es trotzdem - als YEAR_UNKNOWN, damit Tag und Monat
+        nicht verloren gehen.
+        """
+        self.birthday.setDisplayFormat("dd.MM." if no_year else "dd.MM.yyyy")
+
+    def birthday_values(self) -> tuple[object, bool]:
+        """Geburtstag und ob der Jahrgang echt ist. Ohne Angabe: (None, True)."""
+        chosen = self.birthday.date()
+        if chosen <= NO_BIRTHDAY:
+            return None, True
+        if self.no_year.isChecked():
+            return date(YEAR_UNKNOWN, chosen.month(), chosen.day()), False
+        return chosen.toPython(), True
+
     def _accept_if_valid(self) -> None:
         if not self.name.text().strip():
             self.name.setFocus()
@@ -291,8 +337,11 @@ class ContactDialog(QDialog):
     def values(self) -> dict:
         checked_groups = [self.groups.item(i).text() for i in range(self.groups.count())
                           if self.groups.item(i).checkState() == Qt.CheckState.Checked]
+        birthday, has_year = self.birthday_values()
         return {
             "name": self.name.text().strip(),
+            "birthday": birthday,
+            "birthday_has_year": has_year,
             "level": self.level.currentData(),
             "importance": int(self.importance.currentData()),
             "target_interval_days": self.interval.value(),
