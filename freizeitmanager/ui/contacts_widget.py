@@ -68,13 +68,13 @@ class ContactsWidget(QWidget):
         bar.addWidget(self._search, 1)
 
         add = QPushButton(t("contacts.new"))
-        add.setStyleSheet(theme.BTN_PRIMARY)
+        add.setStyleSheet(theme.btn_primary())
         add.setCursor(Qt.CursorShape.PointingHandCursor)
         add.clicked.connect(self._create)
         bar.addWidget(add)
 
         self._log_button = QPushButton(t("contacts.log"))
-        self._log_button.setStyleSheet(theme.BTN_SUCCESS)
+        self._log_button.setStyleSheet(theme.btn_success())
         self._log_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._log_button.clicked.connect(self._log_selected)
         bar.addWidget(self._log_button)
@@ -116,7 +116,7 @@ class ContactsWidget(QWidget):
                 rows.append((
                     contact.id,
                     cand.icon if cand else "",
-                    theme.URGENCY_ACCENTS.get(cand.urgency, theme.ACCENT_NEUTRAL) if cand else None,
+                    theme.urgency_accent(cand.urgency) if cand else None,
                     contact.name,
                     contact.level.name if contact.level else t("common.none"),
                     t(f"importance.short_{contact.importance}"),

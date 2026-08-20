@@ -19,7 +19,8 @@ sondern **„was wäre jetzt eine gute, realistische Aktion für mich?"**
 | Qt-Oberfläche: Cockpit, Kontakte, Rotation, Einstellungen | fertig |
 | Release-Pipeline: CI, Build, `.lpmodule`, Verifizierer | fertig |
 | Sprachen: Deutsch, Englisch, Französisch | fertig |
-| Tests | 68, grün (UI-, Dialog-, Paketierungs- und i18n-Tests) |
+| Themes + modulweit gemeinsames Erscheinungsbild | fertig |
+| Tests | 87, grün (UI, Dialoge, Paketierung, i18n, Themes) |
 | Hobbys / Aktivitäten (0.2) | offen |
 | Kalenderzugriff (0.3) | architektonisch vorgesehen, nicht gebaut |
 
@@ -125,6 +126,9 @@ freizeitmanager/
 │   ├── rotation_engine.py       Score, Begründung, Fairness, Snooze
 │   ├── contact_service.py       Kontakte, Interaktionen, Termine, Quick Actions
 │   └── dashboard_service.py     Fokus-Cockpit, Reroll, Energiezustand
+├── ui/
+│   ├── theme_manager.py         Profile, eigene Fassungen, gemeinsames Theme
+│   └── profiles/*.json          9 mitgelieferte Themes
 ├── i18n/
 │   ├── translator.py            t(), Sprachwahl, Datum und Wochentage
 │   └── de.json / en.json / fr.json
@@ -161,6 +165,28 @@ Entwarnungskarte. Leere Bereiche werden ausgeblendet statt leer angezeigt.
 Dringlichkeit wird über einen farbigen Punkt und den farbigen Kartenrand
 transportiert, nicht über Emoji: Zeichen wie U+1F7E0 fehlen in vielen
 Systemschriften und erscheinen dort als leere Lücke.
+
+## Themes
+
+Zwei Rückfallprofile stecken im Code, alles Weitere liegt als JSON in
+`freizeitmanager/ui/profiles`. Eigene Fassungen landen im Datenordner unter
+`theme_profiles/` und überschreiben das mitgelieferte Profil, ohne es zu
+zerstören. Ein fehlerhaftes Profil wird übersprungen, in
+`logs/theme_profile_errors.log` protokolliert und in den Einstellungen
+gemeldet – die Anwendung startet trotzdem.
+
+Außerhalb der Profildateien enthält die Oberfläche keinen einzigen festen
+Farbwert.
+
+### Ein Theme für alle Module
+
+Der Haken **„Für alle LifePlanner-Module übernehmen"** schreibt das Theme nach
+`$LIFEPLANNER_BRIDGE_DIR/shared_theme.json` (Schema `lifeplanner.theme.v1`).
+Andere Module lesen es dort, solange sie **„Gemeinsames Theme des LifePlanners
+übernehmen"** eingeschaltet haben. Der Austausch läuft über den Bridge-Ordner,
+weil der Modul-Host-Vertrag den Zugriff auf fremde Datenbanken verbietet.
+
+Das Format und die drei Regeln stehen in `docs/GEMEINSAMES_THEME.md`.
 
 ## LifePlanner-Integration
 

@@ -27,6 +27,11 @@ datas = [
     (str(ROOT / "freizeitmanager" / "i18n" / "de.json"), "freizeitmanager/i18n"),
     (str(ROOT / "freizeitmanager" / "i18n" / "en.json"), "freizeitmanager/i18n"),
     (str(ROOT / "freizeitmanager" / "i18n" / "fr.json"), "freizeitmanager/i18n"),
+    # Themeprofile gehoeren wie die Sprachdateien ins Paket: Sie werden zur
+    # Laufzeit ueber den Dateipfad geladen. Fehlen sie, bleiben nur die zwei
+    # eingebauten Rueckfallprofile uebrig.
+    *[(str(path), "freizeitmanager/ui/profiles")
+      for path in sorted((ROOT / "freizeitmanager" / "ui" / "profiles").glob("*.json"))],
     (str(ROOT / "version.json"), "."),
     (str(ROOT / "module.json"), "."),
     (str(ROOT / "README.md"), "."),

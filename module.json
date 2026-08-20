@@ -2,7 +2,7 @@
   "schema": "lifeplanner.module.v1",
   "id": "freizeitmanager",
   "name": "FreizeitManager",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Freundschaftspflege, Kontaktrotation, Aktivitaeten und Freizeitplanung.",
   "source_entry": "main.py",
   "windows_executable": "FreizeitManager/FreizeitManager.exe",

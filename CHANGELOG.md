@@ -1,3 +1,76 @@
+# v0.1.3 – THEME-MANAGER UND GEMEINSAMES ERSCHEINUNGSBILD
+
+Themes nach dem Vorbild des BudgetManagers – und eine zentrale Wahl, die für
+alle LifePlanner-Module gilt.
+
+## Themes
+
+- `ui/theme_manager.py` mit demselben Aufbau wie im BudgetManager: **zwei**
+  Rückfallprofile im Code, alles Weitere als JSON in `ui/profiles`, eigene
+  Fassungen im Datenordner.
+- Mitgeliefert: Standard Hell/Dunkel, Nord, Solarized Hell/Dunkel, Dracula,
+  Warm Sepia, Kontrast Schwarzweiss, OLED Schwarz.
+- Ein fehlerhaftes Profil wird übersprungen, protokolliert und in den
+  Einstellungen gemeldet – statt die Anwendung farblos starten zu lassen.
+- Schriftgröße gehört zum Profil und wird als eigene Fassung gesichert.
+
+Das Stylesheet enthielt vorher rund fünfzig feste Farbwerte. Alle kommen jetzt
+aus dem Profil; außerhalb der Profildateien steht in der gesamten Oberfläche
+kein einziger Farbwert mehr.
+
+## Zentral für alle Module
+
+Neu in den Einstellungen: **„Für alle LifePlanner-Module übernehmen"**. Der
+Haken schreibt das Theme nach
+`$LIFEPLANNER_BRIDGE_DIR/shared_theme.json` (Schema `lifeplanner.theme.v1`),
+wo BudgetManager, FPM und der LifePlanner es lesen können. Umgekehrt folgt der
+FreizeitManager der zentralen Wahl, solange **„Gemeinsames Theme des
+LifePlanners übernehmen"** eingeschaltet ist.
+
+Drei Regeln, bewusst so gewählt (siehe `docs/GEMEINSAMES_THEME.md`):
+
+1. Lesen ist freiwillig – ohne den Haken gilt die lokale Wahl.
+2. Schreiben ist eine ausdrückliche Handlung – ein Modul, das beim Start
+   ungefragt sein Theme veröffentlicht, würde die Wahl aller anderen
+   überschreiben.
+3. Ohne Host passiert nichts; die Bedienelemente sind dann ausgegraut.
+
+Der Austausch läuft über den Bridge-Ordner, weil der Modul-Host-Vertrag den
+Zugriff auf fremde Datenbanken verbietet. Eine beschädigte Datei wird
+ignoriert, nicht übernommen.
+
+## Behobene Fehler
+
+Vier Lesbarkeitsfehler, die erst am gerenderten Fenster auffielen:
+
+- **Die Seitenleiste war in dunklen Themes unlesbar.** Ihr Text nutzte
+  `text_invers` – gedacht als Text auf der Akzentfarbe. Sie hat jetzt einen
+  eigenen Farbschlüssel.
+- **Die Kacheln blieben weiß.** Ihr Inline-Stylesheet überschreibt das
+  Anwendungs-Stylesheet und enthielt feste Farben.
+- **Ein Themewechsel kam bei Kacheln und Karten nicht an**, weil `refresh()`
+  nur den Inhalt erneuert, nicht den Inline-Stil. Die Seiten werden jetzt neu
+  aufgebaut – wie beim Sprachwechsel.
+- **Der Modusknopf war ein leeres Rechteck.** Er steht in der Seitenleiste,
+  trug aber die Panel-Farben.
+
+Dazu zwei Dinge, die vorher schon schief waren:
+
+- Der Einstellungsseite fehlte ein **Scrollbereich**; bei 800 px Fensterhöhe
+  quetschte Qt die Gruppen bis zur Überlappung ineinander.
+- Kontrollkästchen hatten kein sichtbares Kästchen.
+
+## Tests
+
+87 statt 85. `tests/test_theme.py` prüft unter anderem, dass jedes Profil alle
+Farbschlüssel abdeckt, dass eine kaputte Profildatei übersprungen statt
+verschluckt wird, dass ein zweites Modul das gemeinsame Theme übernimmt und
+dass eine beschädigte Bridge-Datei keinen Schaden anrichtet.
+
+Neu ist ein **Kontrasttest** über vierzehn Farbpaare in jedem Profil. Er hat
+sofort zwei zu blasse Sekundärtexte in den Solarized-Profilen gefunden; beide
+sind korrigiert.
+
 # v0.1.2 – DEUTSCH, ENGLISCH, FRANZÖSISCH
 
 Die Oberfläche spricht jetzt drei Sprachen. Die Umschaltung greift sofort,

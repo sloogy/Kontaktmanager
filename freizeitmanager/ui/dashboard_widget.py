@@ -36,11 +36,13 @@ from freizeitmanager.ui.common import CalmCard, FocusTile, NextStepCard
 from freizeitmanager.ui.dialogs import PlanActivityDialog
 
 # Schluessel statt Text - die Beschriftung entsteht erst beim Aufbau.
+# Schluessel und Dringlichkeitsstufe - Farbe und Text entstehen erst beim
+# Aufbau, damit Theme- und Sprachwechsel sofort greifen.
 TILE_SPECS = [
-    ("due_now", "cockpit.tile_due", theme.ACCENT_DUE),
-    ("this_week", "cockpit.tile_week", theme.ACCENT_SOON),
-    ("planned", "cockpit.tile_planned", theme.ACCENT_PLANNED),
-    ("all_good", "cockpit.tile_good", theme.ACCENT_FRESH),
+    ("due_now", "cockpit.tile_due", "due"),
+    ("this_week", "cockpit.tile_week", "soon"),
+    ("planned", "cockpit.tile_planned", "planned"),
+    ("all_good", "cockpit.tile_good", "fresh"),
 ]
 
 ENERGY_SPECS = [
@@ -96,7 +98,12 @@ class DashboardWidget(QWidget):
 
         self._tiles_grid = QGridLayout()
         self._tiles_grid.setSpacing(12)
-        self._tiles = [FocusTile(key, t(label_key), accent) for key, label_key, accent in TILE_SPECS]
+        self._tiles = [
+            FocusTile(key, t(label_key),
+                      theme.planned_accent() if urgency == "planned"
+                      else theme.urgency_accent(urgency))
+            for key, label_key, urgency in TILE_SPECS
+        ]
         for tile in self._tiles:
             tile.double_clicked.connect(self._tile_opened)
             tile.clicked.connect(self._tile_opened)
@@ -112,7 +119,7 @@ class DashboardWidget(QWidget):
         steps_title.setObjectName("pageTitle")
         steps_title.setStyleSheet("font-size: 16px;")
         self._reroll_button = QPushButton(t("cockpit.reroll"))
-        self._reroll_button.setStyleSheet(theme.BTN_QUIET)
+        self._reroll_button.setStyleSheet(theme.btn_quiet())
         self._reroll_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._reroll_button.clicked.connect(self._reroll)
         steps_head.addWidget(steps_title)

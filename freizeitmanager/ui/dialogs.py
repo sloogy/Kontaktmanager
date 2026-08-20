@@ -283,7 +283,8 @@ class ContactDialog(QDialog):
     def _accept_if_valid(self) -> None:
         if not self.name.text().strip():
             self.name.setFocus()
-            self.name.setStyleSheet("border: 1px solid #dc2626;")
+            from freizeitmanager.ui import theme
+            self.name.setStyleSheet(f"border: 1px solid {theme.color('gefahr')};")
             return
         self.accept()
 

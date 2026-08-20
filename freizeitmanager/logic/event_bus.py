@@ -56,6 +56,7 @@ class AppEventBus(QObject):
     focus_changed = Signal()
     settings_changed = Signal()
     language_changed = Signal()
+    theme_changed = Signal()
 
     _instance: AppEventBus | None = None
 

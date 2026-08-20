@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QScrollArea,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -22,8 +23,10 @@ from PySide6.QtWidgets import (
 from freizeitmanager import paths
 from freizeitmanager.database import db
 from freizeitmanager.i18n.translator import LANGUAGES, current_language, set_language, t
+from freizeitmanager.integration.shared_theme import describe_shared_theme
 from freizeitmanager.logic.event_bus import AppEventBus
 from freizeitmanager.ui import theme
+from freizeitmanager.ui.theme_manager import FONT_SIZE_MAX, FONT_SIZE_MIN, ThemeManager
 
 
 def _translator():
@@ -41,7 +44,18 @@ def _weekday_short(index: int) -> str:
 class SettingsWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        layout = QVBoxLayout(self)
+        # Ohne Scrollbereich quetscht Qt die Gruppen bei kleinen Fenstern
+        # untereinander bis zur Ueberlappung - die Seite ist hoeher als ein
+        # 800px-Fenster. Das Cockpit macht es genauso.
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        outer.addWidget(scroll)
+        page = QWidget()
+        scroll.setWidget(page)
+
+        layout = QVBoxLayout(page)
         layout.setContentsMargins(22, 18, 22, 22)
         layout.setSpacing(12)
 
@@ -65,6 +79,8 @@ class SettingsWidget(QWidget):
         hint.setObjectName("pageHint")
         language_form.addRow(hint)
         layout.addWidget(language_group)
+
+        layout.addWidget(self._build_appearance())
 
         capacity = QGroupBox(t("settings.capacity"))
         form = QFormLayout(capacity)
@@ -118,11 +134,11 @@ class SettingsWidget(QWidget):
 
         row = QHBoxLayout()
         save = QPushButton(t("common.save"))
-        save.setStyleSheet(theme.BTN_PRIMARY)
+        save.setStyleSheet(theme.btn_primary())
         save.setCursor(Qt.CursorShape.PointingHandCursor)
         save.clicked.connect(self._save)
         backup = QPushButton(t("settings.backup"))
-        backup.setStyleSheet(theme.BTN_SECONDARY)
+        backup.setStyleSheet(theme.btn_secondary())
         backup.setCursor(Qt.CursorShape.PointingHandCursor)
         backup.clicked.connect(self._backup)
         row.addWidget(save)
@@ -135,6 +151,96 @@ class SettingsWidget(QWidget):
         layout.addStretch(1)
 
         self.load()
+
+    def _build_appearance(self) -> QGroupBox:
+        """Theme, Schriftgroesse und die modulweite Uebernahme."""
+        manager = ThemeManager.instance()
+        box = QGroupBox(t("settings.appearance"))
+        form = QFormLayout(box)
+
+        self.theme = QComboBox()
+        for name in manager.available_profiles():
+            self.theme.addItem(name, name)
+        index = self.theme.findData(manager.current_profile().name)
+        if index >= 0:
+            self.theme.setCurrentIndex(index)
+        self.theme.currentIndexChanged.connect(self._theme_chosen)
+        form.addRow(t("settings.theme"), self.theme)
+
+        self.font_size = QSpinBox()
+        self.font_size.setRange(FONT_SIZE_MIN, FONT_SIZE_MAX)
+        self.font_size.setValue(manager.current_profile().font_size)
+        self.font_size.valueChanged.connect(self._font_size_chosen)
+        form.addRow(t("settings.font_size"), self.font_size)
+
+        theme_hint = QLabel(t("settings.theme_hint"))
+        theme_hint.setObjectName("pageHint")
+        theme_hint.setWordWrap(True)
+        form.addRow(theme_hint)
+
+        # Die modulweiten Bedienelemente ergeben nur im Verbund einen Sinn.
+        hosted = paths.is_hosted()
+
+        self.theme_follow = QCheckBox(t("settings.theme_follow_shared"))
+        self.theme_follow.setToolTip(t("settings.theme_follow_tooltip"))
+        self.theme_follow.setChecked(manager.follows_shared())
+        self.theme_follow.setEnabled(hosted)
+        self.theme_follow.toggled.connect(self._follow_toggled)
+        form.addRow(self.theme_follow)
+
+        self.theme_for_all = QCheckBox(t("settings.theme_for_all"))
+        self.theme_for_all.setToolTip(t("settings.theme_for_all_tooltip"))
+        self.theme_for_all.setEnabled(hosted)
+        form.addRow(self.theme_for_all)
+
+        self._theme_status = QLabel(
+            describe_shared_theme() if hosted else t("settings.theme_standalone"))
+        self._theme_status.setObjectName("pageHint")
+        self._theme_status.setWordWrap(True)
+        form.addRow(self._theme_status)
+
+        # Fehlerhafte Profile werden uebersprungen - aber nicht verschwiegen.
+        errors = manager.get_load_errors()
+        if errors:
+            warning = QLabel(t("settings.theme_errors", count=len(errors)))
+            warning.setObjectName("pageHint")
+            warning.setStyleSheet(f"color: {theme.color('gefahr')};")
+            warning.setWordWrap(True)
+            form.addRow(warning)
+        return box
+
+    def _theme_chosen(self) -> None:
+        name = self.theme.currentData()
+        if not name:
+            return
+        manager = ThemeManager.instance()
+        # Eine bewusste lokale Wahl beendet das Folgen des gemeinsamen Themes -
+        # sonst waere die Auswahl beim naechsten Start wieder weg.
+        if manager.follows_shared() and not self.theme_for_all.isChecked():
+            manager.set_follows_shared(False)
+            self.theme_follow.setChecked(False)
+        manager.set_current(name, for_all_modules=self.theme_for_all.isChecked())
+        self.font_size.blockSignals(True)
+        self.font_size.setValue(manager.current_profile().font_size)
+        self.font_size.blockSignals(False)
+        if self.theme_for_all.isChecked():
+            self._theme_status.setText(t("settings.theme_applied_all"))
+        AppEventBus.instance().theme_changed.emit()
+
+    def _font_size_chosen(self, value: int) -> None:
+        """Schriftgroesse als eigene Fassung des aktiven Themes sichern."""
+        manager = ThemeManager.instance()
+        profile = manager.current_profile()
+        data = profile.to_dict()
+        data["schriftgroesse"] = int(value)
+        manager.save_override(profile.name, data)
+        if self.theme_for_all.isChecked():
+            manager.apply_to_all_modules(profile.name)
+        AppEventBus.instance().theme_changed.emit()
+
+    def _follow_toggled(self, checked: bool) -> None:
+        ThemeManager.instance().set_follows_shared(bool(checked))
+        AppEventBus.instance().theme_changed.emit()
 
     @staticmethod
     def _pair(label: str, check: QCheckBox, spin: QSpinBox) -> QHBoxLayout:

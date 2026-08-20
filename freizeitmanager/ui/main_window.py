@@ -19,6 +19,7 @@ from freizeitmanager.ui.dashboard_widget import DashboardWidget
 from freizeitmanager.ui.rotation_widget import RotationWidget
 from freizeitmanager.ui.settings_widget import SettingsWidget
 from freizeitmanager.ui.styles import get_stylesheet, install_emoji_fallback
+from freizeitmanager.ui.theme_manager import ThemeManager
 
 # key, Uebersetzungsschluessel, nur im Expertenmodus
 PAGES = [
@@ -36,7 +37,7 @@ class MainWindow(QMainWindow):
         self.resize(1180, 780)
         self.setMinimumSize(720, 560)
         install_emoji_fallback()
-        self.setStyleSheet(get_stylesheet(1.0))
+        self._apply_theme()
 
         load_language_from_settings()
         with db.get_session() as session:
@@ -69,7 +70,9 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+N"), self, self._contacts._create)
         QShortcut(QKeySequence("Ctrl+E"), self, self._toggle_mode)
 
-        AppEventBus.instance().language_changed.connect(self._rebuild_for_language)
+        bus = AppEventBus.instance()
+        bus.language_changed.connect(self._rebuild_for_language)
+        bus.theme_changed.connect(self._apply_theme)
         self._apply_mode()
         self.show_page("cockpit")
 
@@ -106,17 +109,42 @@ class MainWindow(QMainWindow):
         layout.addWidget(version)
         return sidebar
 
+    def _apply_theme(self) -> None:
+        """Stylesheet neu setzen und die Schrift der Anwendung angleichen.
+
+        Die Schriftgroesse muss zusaetzlich am QApplication-Font haengen,
+        sonst rechnen Tabellen ihre Zeilenhoehen weiter mit der alten Groesse.
+        """
+        from PySide6.QtWidgets import QApplication
+        ThemeManager.reset()
+        profile = ThemeManager.instance().current_profile()
+        self.setStyleSheet(get_stylesheet(1.0, profile))
+        app = QApplication.instance()
+        if app is not None:
+            font = app.font()
+            font.setPointSize(profile.font_size)
+            app.setFont(font)
+        # Kacheln und Karten setzen ihre Farben als Inline-Stylesheet, das das
+        # Anwendungs-Stylesheet ueberschreibt. Ein refresh() erneuert nur den
+        # Inhalt, nicht den Stil - deshalb werden die Seiten neu aufgebaut.
+        if getattr(self, "_pages", None):
+            self._rebuild_pages()
+
     def _rebuild_for_language(self) -> None:
-        """Baut alle Ansichten neu auf, damit die Sprache sofort greift.
+        """Sprache wechseln: Beschriftungen der Navigation und alle Seiten.
 
         Qt uebersetzt gesetzte Beschriftungen nicht nachtraeglich. Ein
         Neuaufbau ist hier ehrlicher als hunderte setText-Aufrufe zu pflegen,
         von denen frueher oder spaeter einer vergessen wird.
         """
-        current = next((key for key, button in self._nav_buttons.items()
-                        if button.isChecked()), "cockpit")
         for key, label_key, _ in PAGES:
             self._nav_buttons[key].setText(t(label_key))
+        self._rebuild_pages()
+
+    def _rebuild_pages(self) -> None:
+        """Alle Seiten neu erzeugen und die aktive Seite beibehalten."""
+        current = next((key for key, button in self._nav_buttons.items()
+                        if button.isChecked()), "cockpit")
 
         for key, factory in (("cockpit", lambda: DashboardWidget(expert=self._expert)),
                              ("contacts", lambda: ContactsWidget(expert=self._expert)),

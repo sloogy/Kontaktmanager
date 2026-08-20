@@ -1,26 +1,64 @@
-"""Zentrale Stilkonstanten. Einzige Quelle fuer spaetere Theme-Anpassungen."""
+"""Farben und Knopfstile aus dem aktiven Theme.
+
+Bewusst Funktionen statt Konstanten: Ein Modul-Dict wird beim Import
+ausgewertet und wuerde das Theme einfrieren, das beim Programmstart aktiv
+war. Ein Wechsel zur Laufzeit haette dann keine Wirkung - derselbe Grund,
+aus dem auch die Uebersetzungen lazy aufgeloest werden.
+"""
 from __future__ import annotations
 
-# Ampelfarben der Dringlichkeit - bewusst freundlich, kein Alarmrot.
-ACCENT_FRESH = "#16a34a"
-ACCENT_SOON = "#ca8a04"
-ACCENT_DUE = "#ea580c"
-ACCENT_LONG = "#2563eb"
-ACCENT_PLANNED = "#0891b2"
-ACCENT_NEUTRAL = "#64748b"
+from freizeitmanager.ui.theme_manager import ThemeManager
 
-URGENCY_ACCENTS = {
-    "fresh": ACCENT_FRESH,
-    "soon": ACCENT_SOON,
-    "due": ACCENT_DUE,
-    "long": ACCENT_LONG,
+# Dringlichkeitsstufe -> Farbschluessel im Profil
+URGENCY_KEYS = {
+    "fresh": "dringlichkeit_frisch",
+    "soon": "dringlichkeit_bald",
+    "due": "dringlichkeit_faellig",
+    "long": "dringlichkeit_lange",
 }
 
-BTN_PRIMARY = ("background:#2563eb;color:white;border:none;padding:8px 18px;"
-               "border-radius:6px;font-weight:700;")
-BTN_SUCCESS = ("background:#16a34a;color:white;border:none;padding:8px 18px;"
-               "border-radius:6px;font-weight:700;")
-BTN_SECONDARY = ("background:#e2e8f0;color:#1e293b;border:1px solid #cbd5e1;"
-                 "padding:8px 16px;border-radius:6px;font-weight:600;")
-BTN_QUIET = ("background:transparent;color:#64748b;border:1px solid #cbd5e1;"
-             "padding:8px 14px;border-radius:6px;")
+
+def color(key: str) -> str:
+    return ThemeManager.instance().current_profile().color(key)
+
+
+def urgency_accent(urgency: str) -> str:
+    """Akzentfarbe einer Dringlichkeitsstufe; unbekannt -> gedaempft."""
+    key = URGENCY_KEYS.get(urgency)
+    return color(key) if key else color("text_gedimmt")
+
+
+def planned_accent() -> str:
+    return color("dringlichkeit_geplant")
+
+
+def neutral_accent() -> str:
+    return color("text_gedimmt")
+
+
+def _button(background: str, text: str, *, border: str = "none",
+            weight: int = 700) -> str:
+    return (f"background:{background};color:{text};border:{border};"
+            f"padding:8px 18px;border-radius:6px;font-weight:{weight};")
+
+
+def btn_primary() -> str:
+    return _button(color("akzent"), color("akzent_text"))
+
+
+def btn_success() -> str:
+    return _button(color("erfolg"), color("erfolg_text"))
+
+
+def btn_secondary() -> str:
+    return _button(color("hover_hintergrund"), color("text"),
+                   border=f"1px solid {color('rand')}", weight=600)
+
+
+def btn_quiet() -> str:
+    return (f"background:transparent;color:{color('text_gedimmt')};"
+            f"border:1px solid {color('rand')};padding:8px 14px;border-radius:6px;")
+
+
+def btn_danger() -> str:
+    return _button(color("gefahr"), color("text_invers"))

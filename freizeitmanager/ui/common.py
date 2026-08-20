@@ -81,12 +81,20 @@ class FocusTile(QFrame):
         self._apply_style()
 
     def _apply_style(self) -> None:
-        border = self.accent if self._selected else "#dbe3ec"
-        background = "#eff6ff" if self._selected else "#ffffff"
+        """Inline-Stil - er ueberschreibt das Stylesheet der Anwendung.
+
+        Deshalb muessen auch hier alle Farben aus dem Theme kommen. Feste
+        Werte an dieser Stelle machten die Kacheln in dunklen Themes weiss.
+        """
+        border = self.accent if self._selected else theme.color("karte_rand")
+        background = (theme.color("hover_hintergrund") if self._selected
+                      else theme.color("karte_hintergrund"))
         self.setStyleSheet(
             f"QFrame#focusTile {{ background:{background}; border:2px solid {border};"
             f" border-radius:9px; }}"
-            f"QLabel#tileTitle {{ color:{self.accent}; }}")
+            f"QLabel#tileTitle {{ color:{self.accent}; }}"
+            f"QLabel#tileValue {{ color:{theme.color('text')}; }}"
+            f"QLabel#tileDetail {{ color:{theme.color('text_gedimmt')}; }}")
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
@@ -128,7 +136,7 @@ class NextStepCard(QFrame):
         super().__init__(parent)
         self.candidate = candidate
         self.setObjectName("stepCard")
-        accent = theme.URGENCY_ACCENTS.get(candidate.urgency, theme.ACCENT_NEUTRAL)
+        accent = theme.urgency_accent(candidate.urgency)
         self.setStyleSheet(f"QFrame#stepCard {{ border-left: 5px solid {accent}; }}"
                            f"QLabel#stepUrgency {{ color: {accent}; }}")
 
@@ -182,19 +190,19 @@ class NextStepCard(QFrame):
         cid = candidate.contact_id
 
         done_btn = QPushButton(t(DONE_KEYS[candidate.suggestion]))
-        done_btn.setStyleSheet(theme.BTN_SUCCESS)
+        done_btn.setStyleSheet(theme.btn_success())
         done_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         done_btn.setToolTip(t("step.done_tooltip"))
         done_btn.clicked.connect(
             lambda: self.done.emit(cid, rot.SUGGESTION_TO_KIND[candidate.suggestion]))
 
         plan_btn = QPushButton(t("step.plan"))
-        plan_btn.setStyleSheet(theme.BTN_SECONDARY)
+        plan_btn.setStyleSheet(theme.btn_secondary())
         plan_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         plan_btn.clicked.connect(lambda: self.plan.emit(cid))
 
         later_btn = QPushButton(t("step.later"))
-        later_btn.setStyleSheet(theme.BTN_QUIET)
+        later_btn.setStyleSheet(theme.btn_quiet())
         later_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         later_btn.clicked.connect(lambda: self._later_menu(later_btn))
 
@@ -203,7 +211,7 @@ class NextStepCard(QFrame):
         actions.addStretch(1)
 
         open_btn = QPushButton(t("step.open_contact"))
-        open_btn.setStyleSheet(theme.BTN_QUIET)
+        open_btn.setStyleSheet(theme.btn_quiet())
         open_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         open_btn.clicked.connect(lambda: self.opened.emit(cid))
         actions.addWidget(open_btn)

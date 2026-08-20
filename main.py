@@ -100,6 +100,19 @@ def _smoke() -> int:
             _say(f"FEHLER: Sprachdateien fehlen im Paket: {', '.join(missing)}")
             return 1
 
+        # Dasselbe fuer die Themeprofile: Ohne sie bleiben nur die zwei
+        # eingebauten Rueckfallprofile - das faellt sonst erst dem Nutzer auf.
+        from freizeitmanager.ui.theme_manager import ThemeManager
+        manager = ThemeManager.instance()
+        bundled = sorted(manager.bundled_dir().glob("*.json"))
+        if not bundled:
+            _say("FEHLER: Themeprofile fehlen im Paket.")
+            return 1
+        if manager.get_load_errors():
+            for name, path, message in manager.get_load_errors():
+                _say(f"FEHLER: Themeprofil {name} ({path}): {message}")
+            return 1
+
         window.close()
         db.reset_engine()
     from freizeitmanager.i18n.translator import t
