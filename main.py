@@ -41,11 +41,28 @@ def _say(message: str) -> None:
 
 
 def _setup_logging() -> None:
+    """Logdatei mit Groessengrenze.
+
+    Vorher ein einfacher FileHandler: Die Datei wuchs mit jedem Start weiter,
+    ohne dass sie je jemand geleert haette. Auf einem lange genutzten System
+    ist das irgendwann die groesste Datei im Datenordner - und die
+    interessanten Zeilen stehen ganz unten in einem Berg von Altlasten.
+
+    Dieselben Werte wie in FPM: rund 1,5 MB je Datei, fuenf Staende.
+    """
+    from logging.handlers import RotatingFileHandler
+
+    datei = RotatingFileHandler(
+        paths.logs_dir() / "freizeitmanager.log",
+        maxBytes=1_500_000,
+        backupCount=5,
+        encoding="utf-8",
+        delay=True,
+    )
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
-        handlers=[logging.StreamHandler(sys.stderr),
-                  logging.FileHandler(paths.logs_dir() / "freizeitmanager.log", encoding="utf-8")],
+        handlers=[logging.StreamHandler(sys.stderr), datei],
     )
 
 
