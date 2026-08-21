@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
-import shutil
-from contextlib import contextmanager
+import sqlite3
+from contextlib import closing, contextmanager
 from datetime import datetime
 from pathlib import Path
 
@@ -220,11 +220,59 @@ def set_setting(session: Session, key: str, value: str) -> None:
 
 # ── Sicherung ─────────────────────────────────────────────────────────────────
 
+# Wie viele Sicherungen aufgehoben werden. Ohne Grenze fuellt sich der Ordner
+# still, bis die Platte voll ist - und dann scheitert die Sicherung genau dann,
+# wenn man sie braucht.
+BACKUP_AUFBEWAHREN = 20
+
+
 def create_backup() -> Path | None:
+    """Konsistente Sicherung der Datenbank.
+
+    Frueher war das ein ``shutil.copy2``. Eine SQLite-Datei laesst sich aber
+    nicht gefahrlos kopieren, waehrend jemand hineinschreibt: Die Kopie kann
+    mitten in einer Transaktion entstehen und ist dann unbrauchbar - was erst
+    auffaellt, wenn man sie zurueckspielen will. Die Online-Backup-Schnittstelle
+    von SQLite erzeugt dagegen einen in sich stimmigen Stand.
+    """
     src = paths.db_path()
     if not src.is_file():
         return None
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     dst = paths.backups_dir() / f"freizeitmanager_{stamp}.db"
-    shutil.copy2(src, dst)
+
+    with (
+        closing(sqlite3.connect(f"file:{src}?mode=ro", uri=True)) as quelle,
+        closing(sqlite3.connect(dst)) as ziel,
+    ):
+        quelle.backup(ziel)
+        ziel.commit()
+
+    # Gegenprobe: Eine Sicherung, die man nicht lesen kann, ist keine.
+    with closing(sqlite3.connect(dst)) as pruefung:
+        ergebnis = pruefung.execute("PRAGMA integrity_check").fetchone()
+    if not ergebnis or str(ergebnis[0]).lower() != "ok":
+        dst.unlink(missing_ok=True)
+        raise RuntimeError(f"Sicherung ist beschaedigt: {ergebnis}")
+
+    # Dieselben Daten wie die Datenbank - also auch dieselben Rechte.
+    from freizeitmanager.file_permissions import secure_file
+
+    secure_file(dst)
+    _alte_sicherungen_aufraeumen()
     return dst
+
+
+def _alte_sicherungen_aufraeumen() -> None:
+    """Behaelt die juengsten Sicherungen, entfernt den Rest."""
+    vorhanden = sorted(
+        paths.backups_dir().glob("freizeitmanager_*.db"),
+        key=lambda p: p.name,
+        reverse=True,
+    )
+    for veraltet in vorhanden[BACKUP_AUFBEWAHREN:]:
+        try:
+            veraltet.unlink()
+        except OSError as fehler:
+            _log.debug("Alte Sicherung %s nicht entfernbar: %s", veraltet.name, fehler)
+            break
