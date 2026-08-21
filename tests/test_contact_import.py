@@ -4,10 +4,10 @@ from datetime import date
 import pytest
 
 from freizeitmanager.logic.contact_import import (
-    YEAR_UNKNOWN,
     ERROR_EMPTY,
     ERROR_UNSUPPORTED,
     PROBLEM_BAD_DATE,
+    YEAR_UNKNOWN,
     ImportError_,
     RowAction,
     apply_preview,

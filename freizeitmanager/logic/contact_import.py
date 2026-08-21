@@ -20,11 +20,12 @@ import csv
 import io
 import re
 import unicodedata
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 CSV_SUFFIXES = {".csv", ".txt", ".tsv"}
 EXCEL_SUFFIXES = {".xlsx", ".xlsm"}
@@ -63,7 +64,7 @@ ERROR_EXCEL_UNREADABLE = "import.error_excel_unreadable"
 ERROR_SHEET_EMPTY = "import.error_sheet_empty"
 
 
-class RowAction(str, Enum):
+class RowAction(StrEnum):
     CREATE = "create"      # Neuer Kontakt.
     FILL = "fill"          # Bestehender Kontakt, nur leere Felder auffuellen.
     SKIP = "skip"          # Nichts tun.

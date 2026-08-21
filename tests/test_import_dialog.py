@@ -131,7 +131,7 @@ def test_geburtstag_ohne_jahrgang_zeigt_kein_jahr(qapp, preview):
     row = next(r for r in preview.rows if r.name == "Marko")
     assert row.birthday_has_year is False
     assert "1900" not in birthday_text(row)
-    assert "05.06." == birthday_text(row)
+    assert birthday_text(row) == "05.06."
 
 
 def test_import_schreibt_genau_die_freigegebenen_zeilen(qapp, session, preview):

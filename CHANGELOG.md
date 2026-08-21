@@ -1,3 +1,12 @@
+# v0.1.5 – RELEASEGATE: RUFF WIEDER GRÜN
+
+- Der Releaselauf zu 0.1.4 scheiterte an `ruff`. Behoben: `Iterable` und
+  `Sequence` kommen aus `collections.abc`, `RowAction` ist eine `StrEnum` statt
+  einer `(str, Enum)`-Mischung, eine Yoda-Bedingung im Test steht wieder herum,
+  und zwei Importblöcke sind sortiert.
+- Vier der fünf Funde stammten aus dem Import-Zweig und kamen mit dessen Merge
+  nach `main` mit; einer war neu aus `tools/design_sync.py`.
+
 # v0.1.4 – GEMEINSAMER DESIGNKATALOG
 
 ### Ein gemeinsamer Designkatalog
