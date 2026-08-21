@@ -15,6 +15,18 @@ der Installation eine ausdrückliche Vertrauensbestätigung.
   vorher der öffentliche Schlüssel, lief die Prüfung ohne ihn ins Leere und
   meldete trotzdem Erfolg.
 
+### Das Handbuch gibt es jetzt auf Deutsch, Englisch und Französisch
+
+Erzeugt wurde bisher nur die deutsche Fassung, obwohl die Hilfetexte selbst
+längst übersetzt vorlagen. Wer das Programm auf Englisch oder Französisch
+benutzte, fand daneben ein deutsches Handbuch.
+
+- `docs/USER_GUIDE.{de,en,fr}.md` und die zugehörigen Hilfeseiten entstehen
+  aus derselben Quelle wie die Hilfe in der Anwendung.
+- Die Seiten tragen die passende Sprachauszeichnung, damit Vorleseprogramme
+  französischen Text nicht deutsch aussprechen.
+- Anker vertragen Akzente: Aus „Fraîcheur" wurde vorher „fra-cheur".
+
 ### Das Design folgt auf Wunsch dem Betriebssystem
 
 - Neue Einstellung: Stellt das Betriebssystem auf dunkel um, wechselt das

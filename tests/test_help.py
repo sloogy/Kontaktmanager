@@ -111,3 +111,44 @@ def test_handbuch_liegt_im_paket():
     """Ohne diesen Eintrag fuehrt der Knopf 'Handbuch oeffnen' ins Leere."""
     spec = (ROOT / "FreizeitManager.spec").read_text(encoding="utf-8")
     assert 'docs" / "help" / "index.html"' in spec or "docs/help" in spec
+
+
+# ── Das Handbuch gibt es in allen drei Sprachen ─────────────────────────────
+
+@pytest.mark.parametrize("sprache", ["de", "en", "fr"])
+def test_handbuch_gibt_es_in_jeder_sprache(sprache):
+    """Erzeugt wurde lange nur die deutsche Fassung, obwohl die Hilfetexte
+    selbst schon uebersetzt vorlagen. Wer das Programm auf Englisch oder
+    Franzoesisch benutzte, fand daneben ein deutsches Handbuch."""
+    from tools.build_handbook import guide_pfad, page_pfad
+
+    for pfad in (guide_pfad(sprache), page_pfad(sprache)):
+        assert pfad.is_file(), pfad.name
+        assert pfad.read_text(encoding="utf-8").strip()
+
+
+def test_die_drei_handbuecher_sind_wirklich_verschieden():
+    """Sonst stuende dreimal derselbe deutsche Text da."""
+    from tools.build_handbook import guide_pfad
+
+    texte = {s: guide_pfad(s).read_text(encoding="utf-8") for s in ("de", "en", "fr")}
+    assert texte["de"] != texte["en"] != texte["fr"] != texte["de"]
+    assert "Sommaire" in texte["fr"]
+    assert "Contents" in texte["en"]
+    assert "Inhalt" in texte["de"]
+
+
+def test_die_seite_traegt_die_richtige_sprachauszeichnung():
+    """Ohne lang-Attribut liest ein Screenreader franzoesischen Text deutsch vor."""
+    from tools.build_handbook import page_pfad
+
+    for sprache in ("de", "en", "fr"):
+        assert f'<html lang="{sprache}"' in page_pfad(sprache).read_text(encoding="utf-8")
+
+
+def test_anker_vertragen_akzente():
+    """Aus "Fraicheur" mit Zirkumflex wurde einmal "fra-cheur"."""
+    from tools.build_handbook import _anchor
+
+    assert _anchor("Fraîcheur et rotation") == "fraicheur-et-rotation"
+    assert _anchor("Geburtstage & Jubiläen") == "geburtstage-jubilaeen"
