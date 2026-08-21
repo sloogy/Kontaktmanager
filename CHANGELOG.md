@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.1.8 – 22. August 2026
+
+### Sicherheit
+
+- **Die Datenbank liegt nicht mehr offen.** Sie trägt Namen, Geburtstage,
+  Telefonnummern und private Notizen zu anderen Menschen — Daten Dritter, die
+  diese dem Programm nie selbst anvertraut haben. Angelegt wurde sie bisher
+  mit dem Standard-umask, auf typischen Linux-Systemen also weltlesbar. Jetzt
+  0600, ebenso jede Sicherung.
+- **Modulpakete werden beim Entpacken geprüft.** Vorher stand dort ein blankes
+  `extractall` — und zwar genau an der Stelle, wo ein gerade hereingekommenes
+  Paket geprüft wird, dessen Signatur noch gar nicht kontrolliert ist.
+
+### Stabilität
+
+- **Die Sicherung ist in sich stimmig.** Sie war ein `copy2` der
+  Datenbankdatei; eine SQLite-Datei lässt sich so nicht gefahrlos kopieren,
+  während jemand hineinschreibt. Jetzt über die Online-Backup-Schnittstelle,
+  mit Integritätsprüfung — und die zwanzig jüngsten werden aufgehoben.
+- **Nur eine Instanz je Datenordner.** Zwei Instanzen lasen den Stand beim
+  Start und schrieben unabhängig weiter.
+- **Die Logdatei wächst nicht mehr unbegrenzt.**
+
+### Darstellung
+
+- Ränder und Abstände folgen jetzt auch der eingestellten Schrift, nicht nur
+  die Schriftgrösse selbst.
+
 ## 0.1.7 – 21. August 2026
 
 ### Die Oberfläche wächst mit der Schriftgröße
