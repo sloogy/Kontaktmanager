@@ -23,11 +23,23 @@ def get_stylesheet(scale: float = 1.0, profile: ThemeProfile | None = None) -> s
 
     c = profile.color
     base = _px(profile.point_size, scale)
+    # Zwei Faktoren, bewusst getrennt: ``scale`` ist die Bedienskalierung der
+    # Oberflaeche, ``mass`` bezieht zusaetzlich die Profilschrift ein. Raender
+    # und Abstaende folgen ``mass``, damit sie bei grosser Schrift mitwachsen -
+    # die Schriftgroesse selbst darf das nicht, sonst zaehlte die Einstellung
+    # doppelt.
+    mass = max(0.85, min(1.50, scale * profile.point_size / 10.0))
     small = max(1, base - 1)
     tiny = max(1, base - 2)
     nav = base + 1
     title = base + 7
-    radius = _px(6, scale)
+    # Abgestufte Radien nach dem Vorbild des BudgetManagers: je groesser die
+    # Flaeche, desto runder die Ecke. Karten standen vorher bei 9, Gruppen
+    # ebenfalls - eine eigene Stufe, die sich mit keinem der anderen
+    # Programme deckte.
+    radius_feld = _px(4, mass)     # Eingaben
+    radius = _px(6, mass)          # Schaltflaechen, allgemeine Flaechen
+    radius_karte = _px(8, mass)    # Gruppen und Karten
 
     return f"""
 QMainWindow, QDialog, QWidget {{
@@ -39,12 +51,12 @@ QMainWindow, QDialog, QWidget {{
 
 /* QLabel erbt sonst die Seitenfarbe und zeichnet graue Baender in die Karten. */
 QLabel {{ background: transparent; color: {c('text')}; }}
-QCheckBox {{ background: transparent; color: {c('text')}; spacing: {_px(7, scale)}px; }}
+QCheckBox {{ background: transparent; color: {c('text')}; spacing: {_px(7, mass)}px; }}
 QCheckBox::indicator {{
-    width: {_px(16, scale)}px;
-    height: {_px(16, scale)}px;
+    width: {_px(16, mass)}px;
+    height: {_px(16, mass)}px;
     border: 1px solid {c('rand')};
-    border-radius: {_px(3, scale)}px;
+    border-radius: {_px(3, mass)}px;
     background: {c('eingabe_hintergrund')};
 }}
 QCheckBox::indicator:hover {{ border-color: {c('akzent')}; }}
@@ -59,32 +71,32 @@ QToolTip {{
     background-color: {c('hintergrund_panel')};
     color: {c('text')};
     border: 1px solid {c('rand')};
-    padding: {_px(4, scale)}px;
+    padding: {_px(4, mass)}px;
 }}
 
 /* ── Sidebar ─────────────────────────────────────────────── */
 QWidget#sidebar {{
     background-color: {c('hintergrund_seitenleiste')};
     border-right: 3px solid {c('akzent')};
-    min-width: {_px(210, scale)}px;
-    max-width: {_px(250, scale)}px;
+    min-width: {_px(210, mass)}px;
+    max-width: {_px(250, mass)}px;
 }}
 QWidget#sidebar QWidget {{ background-color: {c('hintergrund_seitenleiste')}; }}
 QLabel#sidebarLogo {{
     color: {c('seitenleiste_text')};
     font-size: {base + 3}px;
     font-weight: 800;
-    padding: {_px(20, scale)}px {_px(16, scale)}px {_px(14, scale)}px {_px(16, scale)}px;
+    padding: {_px(20, mass)}px {_px(16, mass)}px {_px(14, mass)}px {_px(16, mass)}px;
 }}
 QPushButton#navButton {{
     background-color: transparent;
     color: {c('seitenleiste_text')};
     border: none;
     text-align: left;
-    padding: {_px(12, scale)}px {_px(16, scale)}px;
+    padding: {_px(12, mass)}px {_px(16, mass)}px;
     font-size: {nav}px;
     border-radius: 0;
-    min-height: {_px(40, scale)}px;
+    min-height: {_px(40, mass)}px;
 }}
 QPushButton#navButton:hover {{ background-color: {c('hover_hintergrund')}; color: {c('hover_text')}; }}
 QPushButton#navButton:checked {{
@@ -100,8 +112,8 @@ QPushButton#modeToggle {{
     color: {c('seitenleiste_text')};
     border: 1px solid {c('seitenleiste_text_gedimmt')};
     border-radius: {radius}px;
-    padding: {_px(8, scale)}px;
-    margin: {_px(8, scale)}px {_px(12, scale)}px;
+    padding: {_px(8, mass)}px;
+    margin: {_px(8, mass)}px {_px(12, mass)}px;
     font-size: {tiny}px;
     font-weight: 700;
 }}
@@ -109,7 +121,7 @@ QPushButton#modeToggle:hover {{ background-color: {c('akzent')}; color: {c('akze
 QLabel#sidebarVersion {{
     color: {c('seitenleiste_text_gedimmt')};
     font-size: {tiny}px;
-    padding: {_px(10, scale)}px {_px(16, scale)}px;
+    padding: {_px(10, mass)}px {_px(16, mass)}px;
 }}
 
 /* ── Seitenkopf ──────────────────────────────────────────── */
@@ -120,7 +132,7 @@ QLabel#pageHint {{ font-size: {small}px; color: {c('text_gedimmt')}; }}
 QFrame#focusTile {{
     background: {c('karte_hintergrund')};
     border: 2px solid {c('karte_rand')};
-    border-radius: {_px(9, scale)}px;
+    border-radius: {radius_karte}px;
 }}
 QLabel#tileTitle {{ border: none; font-size: {tiny}px; font-weight: 800; }}
 QLabel#tileValue {{ border: none; font-size: {base + 12}px; font-weight: 800; color: {c('text')}; }}
@@ -130,8 +142,8 @@ QLabel#tileDetail {{ border: none; font-size: {tiny}px; color: {c('text_gedimmt'
 QFrame#stepCard {{
     background: {c('karte_hintergrund')};
     border: 1px solid {c('karte_rand')};
-    border-left: {_px(5, scale)}px solid {c('text_gedimmt')};
-    border-radius: {_px(9, scale)}px;
+    border-left: {_px(5, mass)}px solid {c('text_gedimmt')};
+    border-radius: {radius_karte}px;
 }}
 QLabel#stepDot {{ border: none; font-size: {base + 1}px; }}
 QLabel#stepName {{ border: none; font-size: {base + 3}px; font-weight: 800; color: {c('text')}; }}
@@ -149,7 +161,7 @@ QPushButton#whyToggle:hover {{ text-decoration: underline; }}
 QFrame#calmCard {{
     background: {c('ruhe_hintergrund')};
     border: 1px solid {c('ruhe_rand')};
-    border-radius: {_px(9, scale)}px;
+    border-radius: {radius_karte}px;
 }}
 QLabel#calmText {{ border: none; color: {c('ruhe_text')}; font-size: {base + 1}px; font-weight: 700; }}
 
@@ -158,8 +170,8 @@ QPushButton#energyButton {{
     background: {c('hintergrund_panel')};
     color: {c('text_gedimmt')};
     border: 1px solid {c('rand')};
-    border-radius: {_px(16, scale)}px;
-    padding: {_px(6, scale)}px {_px(14, scale)}px;
+    border-radius: {_px(16, mass)}px;
+    padding: {_px(6, mass)}px {_px(14, mass)}px;
     font-size: {small}px;
 }}
 QPushButton#energyButton:hover {{ background: {c('hover_hintergrund')}; color: {c('hover_text')}; }}
@@ -174,16 +186,16 @@ QPushButton#energyButton:checked {{
 QGroupBox {{
     background: {c('hintergrund_panel')};
     border: 1px solid {c('rand')};
-    border-radius: {_px(9, scale)}px;
-    margin-top: {_px(16, scale)}px;
-    padding-top: {_px(14, scale)}px;
+    border-radius: {radius_karte}px;
+    margin-top: {_px(16, mass)}px;
+    padding-top: {_px(14, mass)}px;
     font-weight: 700;
     color: {c('text')};
 }}
 QGroupBox::title {{
     subcontrol-origin: margin;
-    left: {_px(12, scale)}px;
-    padding: 0 {_px(6, scale)}px;
+    left: {_px(12, mass)}px;
+    padding: 0 {_px(6, mass)}px;
     color: {c('text')};
 }}
 
@@ -203,11 +215,11 @@ QHeaderView::section {{
     color: {c('tabelle_header_text')};
     border: none;
     border-bottom: 1px solid {c('rand')};
-    padding: {_px(7, scale)}px;
+    padding: {_px(7, mass)}px;
     font-weight: 700;
     font-size: {tiny}px;
 }}
-QTableWidget::item {{ padding: {_px(5, scale)}px; }}
+QTableWidget::item {{ padding: {_px(5, mass)}px; }}
 QTableWidget::item:hover {{ background: {c('hover_hintergrund')}; color: {c('hover_text')}; }}
 
 /* ── Eingaben ────────────────────────────────────────────── */
@@ -215,9 +227,9 @@ QLineEdit, QSpinBox, QComboBox, QDateEdit, QTextEdit, QListWidget {{
     background: {c('eingabe_hintergrund')};
     color: {c('text')};
     border: 1px solid {c('rand')};
-    border-radius: {radius}px;
-    padding: {_px(5, scale)}px {_px(8, scale)}px;
-    min-height: {_px(26, scale)}px;
+    border-radius: {radius_feld}px;
+    padding: {_px(5, mass)}px {_px(8, mass)}px;
+    min-height: {_px(26, mass)}px;
 }}
 QLineEdit:focus, QSpinBox:focus, QComboBox:focus, QDateEdit:focus, QTextEdit:focus {{
     border-color: {c('akzent')};
@@ -239,20 +251,20 @@ QMenu {{
     border: 1px solid {c('rand')};
 }}
 QMenu::item:selected {{ background: {c('auswahl_hintergrund')}; color: {c('auswahl_text')}; }}
-QPushButton {{ min-height: {_px(28, scale)}px; }}
+QPushButton {{ min-height: {_px(28, mass)}px; }}
 
 QScrollArea {{ border: none; background: {c('hintergrund_app')}; }}
 QScrollArea > QWidget > QWidget {{ background: {c('hintergrund_app')}; }}
 QScrollBar:vertical, QScrollBar:horizontal {{
     background: {c('hintergrund_app')};
     border: none;
-    width: {_px(11, scale)}px;
-    height: {_px(11, scale)}px;
+    width: {_px(11, mass)}px;
+    height: {_px(11, mass)}px;
 }}
 QScrollBar::handle:vertical, QScrollBar::handle:horizontal {{
     background: {c('rand')};
-    border-radius: {_px(5, scale)}px;
-    min-height: {_px(28, scale)}px;
+    border-radius: {_px(5, mass)}px;
+    min-height: {_px(28, mass)}px;
 }}
 QScrollBar::handle:hover {{ background: {c('text_gedimmt')}; }}
 QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; width: 0; }}
