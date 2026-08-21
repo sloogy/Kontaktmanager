@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.7 – 21. August 2026
+
+### Die Oberfläche wächst mit der Schriftgröße
+
+Ränder, Abstände und Rundungen folgten nur der Bedien-Skalierung, nicht der
+eingestellten Schrift. Wer die Schrift zur besseren Lesbarkeit hochstellte,
+bekam grösseren Text in unverändert engen Feldern.
+
+- Zwei Faktoren, bewusst getrennt: Die Bedien-Skalierung und die Profilschrift
+  wirken gemeinsam auf Masse, aber nicht doppelt auf die Schriftgrösse selbst.
+- Abgestufte Radien nach dem Vorbild des BudgetManagers: Eingaben 4,
+  Schaltflächen 6, Karten und Gruppen 8. Karten standen vorher bei 9 — eine
+  eigene Stufe, die sich mit keinem der anderen Programme deckte.
+
 ## 0.1.6 – 21. August 2026
 
 ### Die Modulpakete werden signiert ausgeliefert
