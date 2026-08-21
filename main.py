@@ -130,6 +130,20 @@ def main() -> int:
     _setup_logging()
     _log.info("%s %s startet (%s)", APP_NAME, APP_VERSION,
               "LifePlanner-Modul" if paths.is_hosted() else "eigenstaendig")
+
+    # Nur eine Instanz je Datenordner. Zwei Instanzen lesen den Stand beim
+    # Start und schreiben unabhaengig weiter - wer zuletzt speichert gewinnt.
+    from freizeitmanager.single_instance import SingleInstanceGuard
+
+    guard = SingleInstanceGuard(
+        paths.db_path().parent / "freizeitmanager.instance.lock",
+        app_id="FreizeitManager",
+    )
+    frei, grund = guard.acquire()
+    if not frei:
+        _log.warning("Zweite Instanz blockiert: %s", grund)
+        _say(grund)
+        return 0
     from freizeitmanager.i18n.translator import load_language_from_settings
     db.initialize_database()
     load_language_from_settings()
@@ -149,6 +163,7 @@ def main() -> int:
         return app.exec()
     finally:
         bridge.emit_event("module.stopped", {"version": APP_VERSION})
+        guard.release()
 
 
 if __name__ == "__main__":
