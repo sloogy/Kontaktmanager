@@ -22,7 +22,7 @@ def get_stylesheet(scale: float = 1.0, profile: ThemeProfile | None = None) -> s
     scale = max(0.85, min(1.50, float(scale or 1.0)))
 
     c = profile.color
-    base = _px(profile.font_size, scale)
+    base = _px(profile.point_size, scale)
     small = max(1, base - 1)
     tiny = max(1, base - 2)
     nav = base + 1

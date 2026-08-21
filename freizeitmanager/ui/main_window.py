@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
         app = QApplication.instance()
         if app is not None:
             font = app.font()
-            font.setPointSize(profile.font_size)
+            font.setPointSize(profile.point_size)
             app.setFont(font)
         # Kacheln und Karten setzen ihre Farben als Inline-Stylesheet, das das
         # Anwendungs-Stylesheet ueberschreibt. Ein refresh() erneuert nur den

@@ -133,7 +133,7 @@ def test_ohne_host_passiert_nichts(manager, monkeypatch):
     monkeypatch.delenv("LIFEPLANNER_BRIDGE_DIR", raising=False)
     assert st.shared_theme_path() is None
     assert st.read_shared_theme() is None
-    assert st.publish_shared_theme("Nord - Dunkel", BUILTIN_PROFILES["Standard Dunkel"]) is None
+    assert st.publish_shared_theme("Nord - Dunkel", BUILTIN_PROFILES["Standard - Dunkel"]) is None
 
 
 def test_veroeffentlichtes_theme_haelt_das_schema(manager, tmp_path, monkeypatch):
@@ -211,7 +211,7 @@ def test_fremdes_modul_kann_ein_unbekanntes_theme_setzen(manager, tmp_path, monk
     farben = {key: "#123456" for key in COLOR_KEYS}
     (tmp_path / st.SHARED_THEME_FILE).write_text(json.dumps({
         "schema": st.SHARED_THEME_SCHEMA,
-        "name": "Gruvbox - Hell",
+        "name": "Fremdes Design",
         "modus": "hell",
         "schriftgroesse": 15,
         "farben": farben,
@@ -219,7 +219,7 @@ def test_fremdes_modul_kann_ein_unbekanntes_theme_setzen(manager, tmp_path, monk
     }), encoding="utf-8")
     ThemeManager.reset()
     profile = ThemeManager.instance().current_profile()
-    assert profile.name == "Gruvbox - Hell"
+    assert profile.name == "Fremdes Design"
     assert profile.color("akzent") == "#123456"
     assert profile.font_size == 15
 

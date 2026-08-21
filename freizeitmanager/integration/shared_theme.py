@@ -33,6 +33,7 @@ from typing import Any
 
 from freizeitmanager import paths
 from freizeitmanager.app_info import APP_ID, APP_VERSION
+from freizeitmanager.ui.theme_manager import REFERENCE_FONT_SIZE
 
 _log = logging.getLogger(__name__)
 
@@ -76,7 +77,10 @@ def publish_shared_theme(name: str, profile_data: dict[str, Any]) -> Path | None
         "schema": SHARED_THEME_SCHEMA,
         "name": str(name).strip(),
         "modus": str(profile_data.get("modus", "hell")).strip().lower(),
-        "schriftgroesse": int(profile_data.get("schriftgroesse", 14) or 14),
+        # Der gemeinsame Bezugswert ist 10, nicht die eigene Schriftgroesse 14 -
+        # sonst bekaeme ein Schwesterprogramm daraus einen Faktor 1.4.
+        "schriftgroesse": int(profile_data.get("schriftgroesse", REFERENCE_FONT_SIZE)
+                              or REFERENCE_FONT_SIZE),
         # Farben mitgeben, damit ein Modul das Theme auch darstellen kann,
         # wenn es dieses Profil selbst nicht mitliefert.
         "farben": {key: value for key, value in profile_data.items()

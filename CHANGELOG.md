@@ -1,3 +1,69 @@
+# v0.1.4 – GEMEINSAMER DESIGNKATALOG
+
+### Ein gemeinsamer Designkatalog
+
+LifePlanner, BudgetManager, FountainPen Manager und FreizeitManager liefern
+jetzt dieselben **26 Designs** aus — byteweise dieselben Profildateien, erzeugt
+und geprüft von `tools/design_sync.py`.
+
+**Warum das nötig war.** Vorher kannten BudgetManager und LifePlanner 26 Designs
+mit 29 Rollen, FPM und FreizeitManager sieben mit 38–40. Wer im LifePlanner ein
+Design wählte, das ein Modul nicht selbst mitbrachte, bekam dort dessen
+Hintergrund, aber Standardblau für Akzent, Karten und Statusfarben — was der
+Host nicht mitliefert, fällt im Modul auf das eingebaute Profil zurück. Und drei
+Designs trugen in beiden Lagern verschiedene Namen (`Kontrast - Schwarz/Weiß`
+gegen `Kontrast Schwarzweiss`, `Hell - Warm (Sepia)` gegen `Warm Sepia - Hell`,
+`Dunkel - OLED (Kontrastarm)` gegen `OLED Schwarz`), sodass das Modul das
+Hostprofil unter einem Namen suchte, den es selbst nicht führte.
+
+- **55 Rollen je Profil** — ein Kern von 33 für alle Programme plus die
+  Bedeutungsfarben der einzelnen. Fehlende Rollen wurden nicht erfunden, sondern
+  aus vorhandenen Farben desselben Profils abgeleitet; handverlesene Werte
+  blieben unangetastet. Wo zwei Programme dieselbe Rolle unterschiedlich
+  führten, gilt der Wert des Hosts.
+- **Der Name des Hosts gilt.** Gespeicherte Einstellungen lösen über Aliase
+  weiterhin auf.
+- **Die Schriftgröße bedeutet überall dasselbe:** 10 heißt normal. Der
+  FreizeitManager zeichnet dabei weiterhin 14 Punkt und rechnet den gemeinsamen
+  Wert als Faktor darauf um.
+
+### Lesbarkeit ist jetzt Bedingung, nicht Zufall
+
+- **4,5:1 für jede Schrift auf jedem Grund** — die strengste der vier bisherigen
+  Schwellen, übernommen aus dem BudgetManager.
+- **Die Seitenleiste folgt der Helligkeit des Profils.** Schrift, die auf ihr
+  nicht lesbar ist, wird verworfen und neu abgeleitet — in „Solarized – Hell“
+  war sie exakt die Farbe der Leiste selbst.
+- **Signalfarben heben sich mit mindestens 2,6:1 von der Karte ab.** Ein
+  abgeleitetes Gelb erreichte 1,77:1 und war als Ampelfarbe wertlos.
+- **Gedimmte Schrift unterscheidet sich messbar von der normalen.** In
+  „Solarized – Dunkel“ waren `text` und `text_gedimmt` buchstäblich derselbe Wert.
+- **Farbfehlsichtigkeit wird geprüft.** Erfolg/Warnung/Gefahr, die Budget-Typen,
+  die vier FPM-Bereiche und die fünf Dringlichkeitsstufen müssen auch bei
+  Protanopie, Deuteranopie und Tritanopie unterscheidbar bleiben (Simulation nach
+  Viénot/Brettel/Mollon 1999). Vorher waren **348 von 1716 Farbpaaren** nicht
+  auseinanderzuhalten, teils sogar identisch — jetzt keines. Repariert wird über
+  Helligkeit und Sättigung, nie über den Farbton; der geht dabei gerade verloren.
+
+### Werkzeug
+
+- `tools/design_sync.py check` prüft die eigenen Profile, `build` erzeugt den
+  Katalog in allen vier Programmen, `preview` schreibt eine HTML-Übersicht (mit
+  den Signalfarben, wie Farbfehlsichtige sie sehen), und `new --name … --akzent …`
+  baut aus einer Akzentfarbe ein vollständiges, regelkonformes Design.
+- **`build` ist ein Fixpunkt.** Jede Profildatei führt mit, welche Rollen erzeugt
+  (`_abgeleitet`) und welche nur nachjustiert wurden (`_vorlage`) — sonst wanderte
+  der Katalog mit jedem Lauf ein Stück weiter, statt reproduzierbar zu sein.
+- `tests/test_shared_design.py` hält den Katalog zusammen;
+  `docs/GEMEINSAMES_DESIGN.md` erklärt Aufbau und Regeln.
+
+
+### Weiteres
+- Die eingebauten Rückfallprofile heißen jetzt wie der Katalog: `Standard - Hell`
+  und `Standard - Dunkel`.
+- `ThemeProfile.point_size` rechnet den gemeinsamen Wert in die eigene
+  Schriftgröße um. Am Schriftbild ändert sich nichts.
+
 # v0.1.3 – THEME-MANAGER UND GEMEINSAMES ERSCHEINUNGSBILD
 
 Themes nach dem Vorbild des BudgetManagers – und eine zentrale Wahl, die für

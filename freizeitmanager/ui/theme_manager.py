@@ -30,6 +30,10 @@ MODE_LIGHT = "hell"
 MODE_DARK = "dunkel"
 MODES = (MODE_LIGHT, MODE_DARK)
 
+# Gemeinsamer Bezugswert aller vier Programme: 10 heisst "normal".
+REFERENCE_FONT_SIZE = 10
+# Der FreizeitManager zeichnet bei "normal" 14 Punkt.
+BASE_POINT_SIZE = 14
 FONT_SIZE_MIN = 8
 FONT_SIZE_MAX = 22
 
@@ -75,7 +79,7 @@ COLOR_KEYS = (
 )
 
 BUILTIN_PROFILES: dict[str, dict[str, Any]] = {
-    "Standard Hell": {
+    "Standard - Hell": {
         "modus": MODE_LIGHT,
         "hintergrund_app": "#f1f5f9",
         "hintergrund_panel": "#ffffff",
@@ -112,9 +116,9 @@ BUILTIN_PROFILES: dict[str, dict[str, Any]] = {
         "dringlichkeit_faellig": "#ea580c",
         "dringlichkeit_lange": "#2563eb",
         "dringlichkeit_geplant": "#0891b2",
-        "schriftgroesse": 14,
+        "schriftgroesse": 10,
     },
-    "Standard Dunkel": {
+    "Standard - Dunkel": {
         "modus": MODE_DARK,
         "hintergrund_app": "#0f172a",
         "hintergrund_panel": "#1e293b",
@@ -151,14 +155,25 @@ BUILTIN_PROFILES: dict[str, dict[str, Any]] = {
         "dringlichkeit_faellig": "#fb923c",
         "dringlichkeit_lange": "#60a5fa",
         "dringlichkeit_geplant": "#22d3ee",
-        "schriftgroesse": 14,
+        "schriftgroesse": 10,
     },
 }
 
-DEFAULT_PROFILE = "Standard Hell"
+DEFAULT_PROFILE = "Standard - Hell"
 
 # Umbenannte Profile: alte Einstellung weiterhin aufloesen.
-ALIASES: dict[str, str] = {}
+ALIASES: dict[str, str] = {
+    # Dieselben Designs trugen in den Programmen verschiedene Namen - wer im
+    # LifePlanner "Kontrast - Schwarz/Weiss" waehlte, fand hier nur
+    # "Kontrast Schwarzweiss" und bekam deshalb ein halb uebernommenes Design.
+    # Ab jetzt gilt der Name des Hosts; gespeicherte Einstellungen loesen
+    # weiterhin auf.
+    "Standard Hell": "Standard - Hell",
+    "Standard Dunkel": "Standard - Dunkel",
+    "Kontrast Schwarzweiss": "Kontrast - Schwarz/Weiß",
+    "Warm Sepia - Hell": "Hell - Warm (Sepia)",
+    "OLED Schwarz": "Dunkel - OLED (Kontrastarm)",
+}
 
 
 @dataclass
@@ -179,18 +194,34 @@ class ThemeProfile:
 
     @property
     def font_size(self) -> int:
+        """Schriftgroesse auf dem gemeinsamen Massstab; 10 heisst unveraendert.
+
+        Der Wert steht so auch in den Profilen der Schwesterprogramme. Frueher
+        fuehrte der FreizeitManager hier 14 - dasselbe Design ergab dann in
+        jedem Programm eine andere Schriftgroesse.
+        """
         try:
-            size = int(self.data.get("schriftgroesse", 14))
+            size = int(self.data.get("schriftgroesse", REFERENCE_FONT_SIZE))
         except (TypeError, ValueError):
-            size = 14
+            size = REFERENCE_FONT_SIZE
         return max(FONT_SIZE_MIN, min(FONT_SIZE_MAX, size))
+
+    @property
+    def point_size(self) -> int:
+        """Die tatsaechliche Schriftgroesse des FreizeitManagers.
+
+        Er zeichnet seit jeher eine Stufe groesser als die Schwesterprogramme.
+        Das bleibt so - der gemeinsame Wert wirkt als Faktor darauf.
+        """
+        scaled = BASE_POINT_SIZE * self.font_size / float(REFERENCE_FONT_SIZE)
+        return max(FONT_SIZE_MIN, min(FONT_SIZE_MAX, int(round(scaled))))
 
     def color(self, key: str) -> str:
         """Farbe mit Rueckfall auf das Standardprofil der gleichen Helligkeit."""
         value = self.data.get(key)
         if is_hex_color(value):
             return str(value).strip()
-        fallback = BUILTIN_PROFILES["Standard Dunkel" if self.is_dark else "Standard Hell"]
+        fallback = BUILTIN_PROFILES["Standard - Dunkel" if self.is_dark else "Standard - Hell"]
         return str(fallback.get(key, "#808080"))
 
     def to_dict(self) -> dict[str, Any]:
@@ -203,7 +234,7 @@ def validate_profile_data(data: dict[str, Any]) -> tuple[bool, str]:
     if mode not in MODES:
         return False, f"Ungueltiger modus: {mode!r} (erlaubt: {', '.join(MODES)})"
 
-    raw_size = data.get("schriftgroesse", 14)
+    raw_size = data.get("schriftgroesse", REFERENCE_FONT_SIZE)
     try:
         size = int(raw_size)
     except (TypeError, ValueError):
