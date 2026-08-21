@@ -1,3 +1,29 @@
+# Changelog
+
+## 0.1.6 – 21. August 2026
+
+### Die Modulpakete werden signiert ausgeliefert
+
+Die Signierung war vollständig vorbereitet, es fehlten nur die Schlüssel. Ohne
+sie fiel der Release-Lauf still auf `--allow-unsigned` zurück: Die
+`.lpmodule`-Pakete gingen unsigniert heraus, und der LifePlanner verlangte bei
+der Installation eine ausdrückliche Vertrauensbestätigung.
+
+- Die Schlüssel liegen jetzt im Repository hinterlegt.
+- Beide Stellen sind fail-closed statt stillschweigend nachgiebig: Fehlt der
+  Schlüssel, bricht der Lauf ab, statt unsigniert weiterzubauen. Fehlte
+  vorher der öffentliche Schlüssel, lief die Prüfung ohne ihn ins Leere und
+  meldete trotzdem Erfolg.
+
+### Das Design folgt auf Wunsch dem Betriebssystem
+
+- Neue Einstellung: Stellt das Betriebssystem auf dunkel um, wechselt das
+  Programm mit. Weil es zu einem dunklen Profil kein automatisches helles
+  Gegenstück gibt, wählen Sie beide Seiten selbst.
+- Standard ist aus — eine getroffene Wahl bleibt bestehen. Meldet die
+  Plattform nichts, wird nicht auf gut Glück hell angenommen. Im LifePlanner
+  behält dessen zentrale Darstellung den Vorrang.
+
 # v0.1.5 – RELEASEGATE: RUFF WIEDER GRÜN
 
 - Der Releaselauf zu 0.1.4 scheiterte an `ruff`. Behoben: `Iterable` und
