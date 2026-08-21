@@ -159,7 +159,45 @@ BUILTIN_PROFILES: dict[str, dict[str, Any]] = {
     },
 }
 
+# Rueckfall im Code. Er muss in BUILTIN_PROFILES stehen, denn er greift genau
+# dann, wenn keine Profildatei gelesen werden kann.
 DEFAULT_PROFILE = "Standard - Hell"
+DEFAULT_DARK_PROFILE = "Standard - Dunkel"
+
+# Auslieferungszustand einer neuen Installation. Bewusst getrennt vom Rueckfall:
+# ein frisch installiertes Programm soll nicht nach Rueckfall aussehen.
+# Bestehende Installationen behalten ihre Wahl.
+INITIAL_PROFILE = "V2 Hell – Neon Cyan"
+INITIAL_DARK_PROFILE = "V2 Dunkel – Graphite Cyan"
+
+# Dem Hell/Dunkel-Wechsel des Betriebssystems folgen. Welche Designs dabei
+# gelten, steht getrennt - zu "Nord - Dunkel" gibt es kein helles Gegenstueck.
+SETTING_FOLLOW_SYSTEM = "ui.theme_follow_system"
+SETTING_THEME_LIGHT = "ui.theme_light"
+SETTING_THEME_DARK = "ui.theme_dark"
+
+
+def system_mode() -> str | None:
+    """Hell oder dunkel nach dem Betriebssystem - None, wenn es nichts sagt.
+
+    Qt meldet ``Unknown``, solange die Plattform keine Auskunft gibt. Dann
+    bleibt es bei der eigenen Wahl, statt auf gut Glueck hell anzunehmen.
+    """
+    try:
+        from PySide6.QtCore import Qt
+        from PySide6.QtGui import QGuiApplication
+    except ImportError:
+        return None
+    app = QGuiApplication.instance()
+    if app is None:
+        return None
+    scheme = app.styleHints().colorScheme()
+    if scheme == Qt.ColorScheme.Dark:
+        return MODE_DARK
+    if scheme == Qt.ColorScheme.Light:
+        return MODE_LIGHT
+    return None
+
 
 # Umbenannte Profile: alte Einstellung weiterhin aufloesen.
 ALIASES: dict[str, str] = {
@@ -386,6 +424,50 @@ class ThemeManager:
             db.set_setting(session, "ui.theme_follow_shared", "1" if value else "0")
         self._current = None
 
+    # ── Systemdesign ─────────────────────────────────────────────────────────
+    def follows_system(self) -> bool:
+        """Folgt das Programm dem Hell/Dunkel-Wechsel des Systems?
+
+        Standard ist nein: Wer sich ein Design ausgesucht hat, behaelt es.
+        """
+        from freizeitmanager.database import db
+        with db.get_session() as session:
+            return db.get_bool_setting(session, SETTING_FOLLOW_SYSTEM, False)
+
+    def set_follows_system(self, value: bool) -> None:
+        from freizeitmanager.database import db
+        with db.get_session() as session:
+            db.set_setting(session, SETTING_FOLLOW_SYSTEM, "1" if value else "0")
+        self._current = None
+
+    def system_pair(self) -> tuple[str, str]:
+        """Die beiden Designs fuer helle und dunkle Systemeinstellung."""
+        from freizeitmanager.database import db
+        with db.get_session() as session:
+            light = db.get_setting(session, SETTING_THEME_LIGHT, INITIAL_PROFILE)
+            dark = db.get_setting(session, SETTING_THEME_DARK, INITIAL_DARK_PROFILE)
+        return (self._resolve(light or INITIAL_PROFILE),
+                self._resolve(dark or INITIAL_DARK_PROFILE))
+
+    def set_system_pair(self, light: str, dark: str) -> None:
+        from freizeitmanager.database import db
+        with db.get_session() as session:
+            db.set_setting(session, SETTING_THEME_LIGHT, self._resolve(light))
+            db.set_setting(session, SETTING_THEME_DARK, self._resolve(dark))
+        self._current = None
+
+    def system_profile(self) -> ThemeProfile | None:
+        """Das Design, das zur Systemeinstellung passt - oder None."""
+        mode = system_mode()
+        if mode is None:
+            return None
+        light, dark = self.system_pair()
+        return self.get_profile(dark if mode == MODE_DARK else light)
+
+    def follows_shared_and_hosted(self) -> bool:
+        """Gilt gerade das Profil des LifePlanners?"""
+        return self.follows_shared() and self.shared_profile() is not None
+
     def shared_profile(self) -> ThemeProfile | None:
         """Das gemeinsame Theme als Profil - oder None."""
         from freizeitmanager.integration.shared_theme import read_shared_theme, shared_theme_as_profile_data
@@ -408,14 +490,19 @@ class ThemeManager:
     def current_profile(self) -> ThemeProfile:
         """Immer ein gueltiges Profil - notfalls das eingebaute helle.
 
-        Reihenfolge: gemeinsames Theme (wenn eingeschaltet und vorhanden),
-        sonst die lokale Wahl, sonst das eingebaute helle Profil.
+        Reihenfolge: gemeinsames Theme des LifePlanners (wenn eingeschaltet und
+        vorhanden), sonst das Systemdesign (wenn eingeschaltet), sonst die
+        lokale Wahl, sonst das eingebaute helle Profil.
         """
         if self._current is not None:
             return self._current
         profile = None
         if self.follows_shared():
             profile = self.shared_profile()
+        if profile is None and self.follows_system():
+            # Im LifePlanner gilt dessen Wahl; eigenstaendig darf das
+            # Betriebssystem entscheiden.
+            profile = self.system_profile()
         if profile is None:
             profile = self.get_profile(self.current_name())
         if profile is None:

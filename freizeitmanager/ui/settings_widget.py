@@ -26,7 +26,7 @@ from freizeitmanager.i18n.translator import LANGUAGES, current_language, set_lan
 from freizeitmanager.integration.shared_theme import describe_shared_theme
 from freizeitmanager.logic.event_bus import AppEventBus
 from freizeitmanager.ui import theme
-from freizeitmanager.ui.theme_manager import FONT_SIZE_MAX, FONT_SIZE_MIN, ThemeManager
+from freizeitmanager.ui.theme_manager import FONT_SIZE_MAX, FONT_SIZE_MIN, ThemeManager, system_mode
 
 
 def _translator():
@@ -178,6 +178,37 @@ class SettingsWidget(QWidget):
         theme_hint.setWordWrap(True)
         form.addRow(theme_hint)
 
+        # Dem Betriebssystem folgen. Welche Designs dabei gelten, steht
+        # getrennt: zu "Nord - Dunkel" gibt es kein helles Gegenstueck, das
+        # das Programm erfinden koennte.
+        self.theme_system = QCheckBox(t("settings.theme_follow_system"))
+        self.theme_system.setChecked(manager.follows_system())
+        self.theme_system.toggled.connect(self._system_toggled)
+        form.addRow(self.theme_system)
+
+        light_name, dark_name = manager.system_pair()
+        self.theme_system_light = QComboBox()
+        self.theme_system_dark = QComboBox()
+        for combo, chosen in ((self.theme_system_light, light_name),
+                              (self.theme_system_dark, dark_name)):
+            for name in manager.available_profiles():
+                combo.addItem(name, name)
+            combo.setCurrentIndex(max(0, combo.findData(chosen)))
+            combo.currentIndexChanged.connect(self._system_pair_chosen)
+        form.addRow(t("settings.theme_system_light"), self.theme_system_light)
+        form.addRow(t("settings.theme_system_dark"), self.theme_system_dark)
+
+        system_hint = QLabel(
+            t("settings.theme_system_hint") if system_mode() is not None
+            else t("settings.theme_system_unavailable"))
+        system_hint.setObjectName("pageHint")
+        system_hint.setWordWrap(True)
+        form.addRow(system_hint)
+        if system_mode() is None:
+            # Meldet die Plattform nichts, waere das Haekchen wirkungslos.
+            self.theme_system.setEnabled(False)
+        self._system_toggled(self.theme_system.isChecked())
+
         # Die modulweiten Bedienelemente ergeben nur im Verbund einen Sinn.
         hosted = paths.is_hosted()
 
@@ -208,6 +239,21 @@ class SettingsWidget(QWidget):
             warning.setWordWrap(True)
             form.addRow(warning)
         return box
+
+    def _system_toggled(self, active: bool) -> None:
+        self.theme_system_light.setEnabled(active)
+        self.theme_system_dark.setEnabled(active)
+        manager = ThemeManager.instance()
+        if manager.follows_system() != active:
+            manager.set_follows_system(active)
+            AppEventBus.instance().theme_changed.emit()
+
+    def _system_pair_chosen(self) -> None:
+        manager = ThemeManager.instance()
+        manager.set_system_pair(self.theme_system_light.currentData(),
+                                self.theme_system_dark.currentData())
+        if manager.follows_system():
+            AppEventBus.instance().theme_changed.emit()
 
     def _theme_chosen(self) -> None:
         name = self.theme.currentData()

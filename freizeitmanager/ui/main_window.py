@@ -74,8 +74,32 @@ class MainWindow(QMainWindow):
         bus = AppEventBus.instance()
         bus.language_changed.connect(self._rebuild_for_language)
         bus.theme_changed.connect(self._apply_theme)
+        self._watch_system_color_scheme()
         self._apply_mode()
         self.show_page("cockpit")
+
+    def _watch_system_color_scheme(self) -> None:
+        """Auf den Hell/Dunkel-Wechsel des Betriebssystems reagieren.
+
+        Ohne diese Verbindung wuerde die Einstellung "dem System folgen" erst
+        beim naechsten Start greifen - und genau das ist die Situation, in der
+        sie niemandem hilft.
+        """
+        from PySide6.QtWidgets import QApplication
+
+        app = QApplication.instance()
+        if app is None:
+            return
+        signal = getattr(app.styleHints(), "colorSchemeChanged", None)
+        if signal is None:  # Qt aelter als 6.5
+            return
+        signal.connect(self._system_color_scheme_changed)
+
+    def _system_color_scheme_changed(self, _scheme) -> None:
+        manager = ThemeManager.instance()
+        if not manager.follows_system() or manager.follows_shared_and_hosted():
+            return
+        self._apply_theme()
 
     def _build_sidebar(self) -> QWidget:
         sidebar = QWidget()

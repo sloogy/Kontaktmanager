@@ -12,6 +12,7 @@ from freizeitmanager.ui.theme_manager import (
     BUILTIN_PROFILES,
     COLOR_KEYS,
     DEFAULT_PROFILE,
+    INITIAL_PROFILE,
     MODES,
     ThemeManager,
     ThemeProfile,
@@ -74,6 +75,8 @@ def test_unbekanntes_theme_faellt_auf_den_standard_zurueck(manager, session):
     db.set_setting(session, "ui.theme", "Gibt Es Nicht")
     session.commit()
     ThemeManager.reset()
+    # Hier geht es um den Rueckfall im Code, nicht um den Auslieferungszustand:
+    # ein unbekannter Name darf nicht zu einer farblosen Oberflaeche fuehren.
     assert ThemeManager.instance().current_profile().name == DEFAULT_PROFILE
 
 
@@ -169,7 +172,8 @@ def test_folgen_laesst_sich_abschalten(manager, tmp_path, monkeypatch):
 
     other = ThemeManager.instance()
     other.set_follows_shared(False)
-    assert other.current_profile().name == DEFAULT_PROFILE
+    # Eine frische Testdatenbank traegt das Auslieferungsdesign.
+    assert other.current_profile().name == INITIAL_PROFILE
 
 
 def test_beschaedigtes_gemeinsames_theme_wird_ignoriert(manager, tmp_path, monkeypatch):
@@ -178,12 +182,12 @@ def test_beschaedigtes_gemeinsames_theme_wird_ignoriert(manager, tmp_path, monke
     monkeypatch.setenv("LIFEPLANNER_BRIDGE_DIR", str(tmp_path))
     (tmp_path / st.SHARED_THEME_FILE).write_text("{kaputt", encoding="utf-8")
     ThemeManager.reset()
-    assert ThemeManager.instance().current_profile().name == DEFAULT_PROFILE
+    assert ThemeManager.instance().current_profile().name == INITIAL_PROFILE
 
     (tmp_path / st.SHARED_THEME_FILE).write_text(
         json.dumps({"schema": "fremd.v9", "name": "X"}), encoding="utf-8")
     ThemeManager.reset()
-    assert ThemeManager.instance().current_profile().name == DEFAULT_PROFILE
+    assert ThemeManager.instance().current_profile().name == INITIAL_PROFILE
 
 
 def test_lokal_bekanntes_profil_hat_vorrang_vor_den_uebergebenen_farben(manager, tmp_path, monkeypatch):
@@ -288,3 +292,44 @@ def test_dringlichkeitsfarben_heben_sich_ab(manager):
             if ratio < 2.0:
                 problems.append(f"{name}: {key} = {ratio:.2f}")
     assert not problems, "Ampelfarbe zu schwach:\n  " + "\n  ".join(problems)
+
+
+# ── Systemdesign und Auslieferungszustand ───────────────────────────────────
+
+def test_systemdesign_ist_standardmaessig_aus(manager):
+    """Wer sich ein Design ausgesucht hat, soll es behalten."""
+    assert manager.follows_system() is False
+
+
+def test_systemdesign_waehlt_nach_helligkeit(manager, monkeypatch):
+    from freizeitmanager.ui import theme_manager as tm
+
+    manager.set_system_pair("Solarized - Hell", "Nord - Dunkel")
+    manager.set_follows_system(True)
+    assert manager.system_pair() == ("Solarized - Hell", "Nord - Dunkel")
+
+    monkeypatch.setattr(tm, "system_mode", lambda: "dunkel")
+    ThemeManager.reset()
+    assert ThemeManager.instance().current_profile().name == "Nord - Dunkel"
+
+    monkeypatch.setattr(tm, "system_mode", lambda: "hell")
+    ThemeManager.reset()
+    assert ThemeManager.instance().current_profile().name == "Solarized - Hell"
+
+
+def test_ohne_auskunft_des_systems_bleibt_die_eigene_wahl(manager, monkeypatch):
+    from freizeitmanager.ui import theme_manager as tm
+
+    manager.set_current("Dracula - Dunkel")
+    manager.set_follows_system(True)
+    monkeypatch.setattr(tm, "system_mode", lambda: None)
+    ThemeManager.reset()
+    assert ThemeManager.instance().current_profile().name == "Dracula - Dunkel"
+
+
+def test_auslieferungsdesign_ist_mitgeliefert(manager):
+    """Der Name muss ein Profil treffen - sonst startet das Programm im Rueckfall."""
+    from freizeitmanager.ui.theme_manager import INITIAL_DARK_PROFILE, INITIAL_PROFILE
+
+    for name in (INITIAL_PROFILE, INITIAL_DARK_PROFILE):
+        assert manager.get_profile(name) is not None, name

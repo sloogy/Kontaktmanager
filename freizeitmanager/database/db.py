@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy import create_engine, event, select
+from sqlalchemy import create_engine, event, inspect, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from freizeitmanager import paths
@@ -96,6 +96,9 @@ def get_session() -> Session:
 def initialize_database() -> None:
     """Schema anlegen, Migrationen fahren, Standardwerte ergaenzen."""
     engine = get_engine()
+    # Vor create_all pruefen: danach gibt es die Tabelle immer, und der
+    # Unterschied zwischen Neuinstallation und Bestand waere verloren.
+    is_new_database = not inspect(engine).has_table("app_settings")
     Base.metadata.create_all(engine)
     _add_missing_columns(engine)
     with get_session() as s:
@@ -103,6 +106,7 @@ def initialize_database() -> None:
         if SCHEMA_VERSION not in applied:
             s.add(SchemaMigration(version=SCHEMA_VERSION, applied_at=datetime.now()))
         _seed_settings(s)
+        _seed_theme(s, is_new_database)
         _seed_levels(s)
         _seed_groups(s)
 
@@ -134,6 +138,29 @@ def _add_missing_columns(engine) -> list[str]:
 def _seed_settings(s: Session) -> None:
     existing = {row.key for row in s.scalars(select(AppSetting))}
     for key, value in DEFAULT_SETTINGS.items():
+        if key not in existing:
+            s.add(AppSetting(key=key, value=value))
+
+
+def _seed_theme(s: Session, is_new_database: bool) -> None:
+    """Auslieferungsdesign einer neuen Installation einmalig festhalten.
+
+    Nur bei einer frisch angelegten Datenbank: Ein Update soll niemandem die
+    Farben umstellen, auch wenn nie eine Wahl getroffen wurde.
+    """
+    if not is_new_database:
+        return
+    from freizeitmanager.ui.theme_manager import (
+        INITIAL_DARK_PROFILE,
+        INITIAL_PROFILE,
+        SETTING_THEME_DARK,
+        SETTING_THEME_LIGHT,
+    )
+
+    existing = {row.key for row in s.scalars(select(AppSetting))}
+    for key, value in (("ui.theme", INITIAL_PROFILE),
+                       (SETTING_THEME_LIGHT, INITIAL_PROFILE),
+                       (SETTING_THEME_DARK, INITIAL_DARK_PROFILE)):
         if key not in existing:
             s.add(AppSetting(key=key, value=value))
 
