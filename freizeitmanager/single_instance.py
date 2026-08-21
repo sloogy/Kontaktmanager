@@ -134,7 +134,7 @@ class SingleInstanceGuard:
         finally:
             self.acquired = False
 
-    def __enter__(self) -> "SingleInstanceGuard":
+    def __enter__(self) -> SingleInstanceGuard:
         return self
 
     def __exit__(self, *_ausnahme: object) -> None:
