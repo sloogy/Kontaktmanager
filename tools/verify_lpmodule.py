@@ -20,6 +20,49 @@ sys.path.insert(0, str(ROOT))
 
 from tools.release_signing import tree_sha256, verify_b64
 
+# Grenzen fuers Entpacken, gleich wie in den anderen Programmen der Suite.
+MAX_ZIP_ENTRIES = 100_000
+MAX_MEMBER_BYTES = 512 * 1024 * 1024
+MAX_UNCOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024
+MAX_COMPRESSION_RATIO = 250
+
+
+def sicher_entpacken(archive: zipfile.ZipFile, ziel: Path) -> None:
+    """Entpackt ohne Pfad-Traversal, Symlinks und Zip-Bomben.
+
+    Vorher stand hier ein blankes ``extractall``. Geprueft wird hier ein Paket,
+    das gerade erst hereingekommen ist und dessen Signatur noch gar nicht
+    kontrolliert wurde - genau der Moment, in dem ein praeparierter Pfad
+    Dateien ausserhalb des temporaeren Ordners ueberschreiben koennte.
+    """
+    wurzel = ziel.resolve()
+    eintraege = archive.infolist()
+    if len(eintraege) > MAX_ZIP_ENTRIES:
+        raise ValueError("Modulpaket enthaelt zu viele Eintraege")
+    gesamt = 0
+    for eintrag in eintraege:
+        roh = eintrag.filename.replace("\\", "/")
+        if not roh:
+            continue
+        teile = Path(roh).parts
+        if roh.startswith("/") or ".." in teile or ":" in teile[0]:
+            raise ValueError(f"Unsicherer Pfad im Modulpaket: {eintrag.filename}")
+        if stat.S_ISLNK(eintrag.external_attr >> 16):
+            raise ValueError(f"Symlink im Modulpaket nicht erlaubt: {eintrag.filename}")
+        pfad = (ziel / Path(*teile)).resolve()
+        if pfad != wurzel and wurzel not in pfad.parents:
+            raise ValueError(f"Pfad verlaesst das Zielverzeichnis: {eintrag.filename}")
+        if eintrag.file_size > MAX_MEMBER_BYTES:
+            raise ValueError(f"Datei im Modulpaket zu gross: {eintrag.filename}")
+        gesamt += eintrag.file_size
+        if gesamt > MAX_UNCOMPRESSED_BYTES:
+            raise ValueError("Modulpaket ist entpackt unplausibel gross")
+        if (eintrag.compress_size > 0
+                and eintrag.file_size / eintrag.compress_size > MAX_COMPRESSION_RATIO):
+            raise ValueError(
+                f"Auffaellige Kompressionsrate im Modulpaket: {eintrag.filename}")
+    archive.extractall(ziel)
+
 COMPONENT_SCHEMA = "lifeplanner.component.v1"
 MODULE_SCHEMA = "lifeplanner.module.v1"
 
@@ -78,7 +121,7 @@ def verify(package: Path, *, expect_version: str = "", expect_platform: str = ""
         else:
             with tempfile.TemporaryDirectory(prefix="verify-lpmodule-") as temp:
                 target = Path(temp)
-                archive.extractall(target)
+                sicher_entpacken(archive, target)
                 actual = tree_sha256(target / "payload")
             if actual != declared:
                 problems.append(f"payload_sha256 stimmt nicht: {declared} != {actual}")
