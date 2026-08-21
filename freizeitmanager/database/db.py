@@ -100,6 +100,12 @@ def initialize_database() -> None:
     # Unterschied zwischen Neuinstallation und Bestand waere verloren.
     is_new_database = not inspect(engine).has_table("app_settings")
     Base.metadata.create_all(engine)
+    # Erst jetzt liegt die Datei sicher auf der Platte. Sie traegt Namen,
+    # Geburtstage und private Notizen zu anderen Menschen und wurde bis hierher
+    # mit dem Standard-umask angelegt - auf typischen Linux-Systemen weltlesbar.
+    from freizeitmanager.file_permissions import secure_file
+
+    secure_file(paths.db_path())
     _add_missing_columns(engine)
     with get_session() as s:
         applied = {row.version for row in s.scalars(select(SchemaMigration))}
