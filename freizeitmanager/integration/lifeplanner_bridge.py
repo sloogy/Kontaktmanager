@@ -75,9 +75,12 @@ def publish_focus(cockpit, today: date | None = None) -> Path | None:
             "date": plan.on.isoformat(),
         }, ensure_ascii=False))
 
-    tmp = target.with_suffix(".jsonl.tmp")
-    tmp.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    tmp.replace(target)  # atomar: der Host liest nie eine halbe Datei
+    # Atomar: der Host liest nie eine halbe Datei. Seit Loop 29 der
+    # gemeinsame Helfer, der zusaetzlich fsync und 0600 uebernimmt - die
+    # Zeilen tragen Namen und Termine.
+    from freizeitmanager.atomic_write import atomar_schreiben
+
+    atomar_schreiben(target, "\n".join(lines) + "\n")
     _log.info("Fokus veroeffentlicht: %s (%d Zeilen)", target, len(lines))
     return target
 

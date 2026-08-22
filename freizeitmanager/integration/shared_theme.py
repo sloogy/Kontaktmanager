@@ -92,9 +92,12 @@ def publish_shared_theme(name: str, profile_data: dict[str, Any]) -> Path | None
     }
 
     # Atomar schreiben: ein anderes Modul darf nie eine halbe Datei lesen.
-    tmp = path.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    tmp.replace(path)
+    # Seit Loop 29 der gemeinsame Helfer - er traegt fsync auf Datei und
+    # Verzeichnis bei und gibt der Zwischendatei die Prozessnummer statt
+    # eines festen Namens, den zwei Instanzen sich teilen wuerden.
+    from freizeitmanager.atomic_write import atomar_schreiben
+
+    atomar_schreiben(path, json.dumps(record, ensure_ascii=False, indent=2) + "\n")
     _log.info("Gemeinsames Theme veroeffentlicht: %s (%s)", record["name"], path)
     return path
 
