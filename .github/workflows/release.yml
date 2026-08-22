@@ -51,6 +51,7 @@ jobs:
         run: echo "version=$(python -c 'import json;print(json.load(open("version.json"))["version"])')" >> "$GITHUB_OUTPUT"
 
       - run: ruff check freizeitmanager tools tests main.py
+      - run: python tools/exception_audit.py
       - run: python -m pytest tests/ -q
       - run: python tools/gui_smoke_test.py
 

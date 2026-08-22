@@ -45,6 +45,9 @@ jobs:
       - name: Linting
         run: ruff check freizeitmanager tools tests main.py
 
+      - name: Ausnahmen-Ratchet
+        run: python tools/exception_audit.py
+
       - name: Tests
         run: python -m pytest tests/ -q
 

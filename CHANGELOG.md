@@ -1,5 +1,16 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Stabilität
+
+- **Der Ausnahmen-Ratchet ist eingebaut**, in CI und Release-Lauf. Er prüft
+  über den Syntaxbaum und erfasst alles außerhalb von Tests und Werkzeugen:
+  keine nackten `except:`, kein `except BaseException`, gedeckelte stumme
+  Schlucker (`except Exception: pass`), gedeckelte breite Handler. Der
+  FreizeitManager steht mit vier breiten und null stummen Handlern am besten
+  von den vier Programmen da — der Ratchet hält das fest.
+
 ## 0.1.8 – 22. August 2026
 
 ### Sicherheit
