@@ -45,7 +45,7 @@ jobs:
         run: python tools/sync_version.py --check
 
       - name: Linting
-        run: ruff check freizeitmanager tools tests main.py
+        run: ruff check .
 
       - name: Ausnahmen-Ratchet
         run: python tools/exception_audit.py

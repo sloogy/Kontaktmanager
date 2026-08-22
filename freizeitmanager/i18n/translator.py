@@ -9,12 +9,13 @@ Datumsformate gehoeren mit zur Sprache: ein englischsprachiger Nutzer erwartet
 """
 from __future__ import annotations
 
-import contextlib
 import json
 import sys
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
+
+from freizeitmanager.defensive_log import uebersprungen
 
 FALLBACK_LANGUAGE = "de"
 
@@ -116,8 +117,12 @@ class Translator:
         if kwargs:
             # Ein fehlender Platzhalter darf die Oberflaeche nicht zerreissen:
             # lieber der unformatierte Text als eine Ausnahme im Aufbau.
-            with contextlib.suppress(KeyError, IndexError, ValueError):
+            # Stumm bleiben darf er trotzdem nicht - sonst steht "{name}" im
+            # Text und niemand erfaehrt, in welchem Schluessel es klemmt.
+            try:
                 text = text.format(**kwargs)
+            except (KeyError, IndexError, ValueError) as fehler:
+                uebersprungen(f"t({key!r})", fehler)
         return text
 
     def format_date(self, value: date | datetime | None) -> str:

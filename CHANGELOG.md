@@ -1,5 +1,28 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Sicherheit
+
+- **Ein stummer Schlucker, den der Ratchet nicht sehen konnte.** Der
+  Ausnahmen-Ratchet zählt `except Exception: pass` und deckelt die Zahl —
+  kannte aber nur `except`-Handler. In `i18n/translator.py` stand dieselbe
+  Sache als `contextlib.suppress(KeyError, IndexError, ValueError)`: Ein
+  fehlender Platzhalter in einem Übersetzungstext blieb spurlos, der Nutzer
+  sah `{name}` im Text und niemand erfuhr, in welchem Schlüssel es klemmt.
+  Der FreizeitManager galt darum als das Programm mit null stummen
+  Stellen — er hatte eine. Sie meldet jetzt über
+  `defensive_log.uebersprungen()`, ohne den Ablauf zu ändern; der Ratchet
+  zählt `suppress` in allen vier Programmen mit.
+
+### Ordnung
+
+- **Der `legacy/`-Ordner fiel aus jeder Prüfung.** Die drei Workflows riefen
+  `ruff check freizeitmanager tools tests main.py` auf — eine Ordnerliste, die
+  bei jedem neuen Verzeichnis stillschweigend eine Lücke bekommt. Der
+  Ausschluss steht jetzt als `exclude` in `ruff.toml`, und geprüft wird
+  `ruff check .` wie in den anderen drei Programmen.
+
 ## 0.1.13 — 22. August 2026
 
 ### Stabilität

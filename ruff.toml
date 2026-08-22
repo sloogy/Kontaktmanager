@@ -1,6 +1,12 @@
 # Feste Regelauswahl, damit lokale Prueflaeufe und CI dasselbe sagen -
 # unabhaengig von einer globalen Ruff-Konfiguration auf dem Entwicklerrechner.
 line-length = 110
+# legacy/ ist der stillgelegte Kontaktmanager, der als Referenz erhalten
+# bleibt (siehe legacy/README.md). Er wird von keinem neuen Code benutzt
+# und nicht mehr angefasst. Hier statt am Aufruf ausgenommen: eine
+# Ordnerliste im Workflow driftet, ein neues Verzeichnis faellt dann
+# stillschweigend aus der Pruefung.
+exclude = ["legacy"]
 target-version = "py311"
 
 [lint]
@@ -9,6 +15,15 @@ target-version = "py311"
 # Kalendertagen, eine UTC-Pflicht waere hier schlicht falsch.
 select = ["E4", "E7", "E9", "F", "I", "UP", "SIM", "RUF100"]
 ignore = [
+    # SIM105 raet zu contextlib.suppress statt try/except/pass. Das ist hier
+    # ausdruecklich unerwuenscht: Der Ausnahmen-Ratchet
+    # (tools/exception_audit.py) zaehlt stumme Schlucker und deckelt sie.
+    # Beide Schreibweisen sind gleich stumm - die Umschreibung wuerde nichts
+    # bessern, aber den Bestand kleiner aussehen lassen. Der richtige Weg ist
+    # defensive_log.uebersprungen(), nicht eine andere Verpackung desselben
+    # Schweigens. Genau so lag im FreizeitManager ein stummer Schlucker, den
+    # der Ratchet bis Loop 45 nicht sehen konnte.
+    "SIM105",
     "E402",    # Importe nach sys.path-Anpassung sind in Werkzeugen noetig
 ]
 
