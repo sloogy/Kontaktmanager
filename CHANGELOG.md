@@ -1,5 +1,58 @@
 # Changelog
 
+## 0.1.13 — 22. August 2026
+
+### Stabilität
+
+- **Das Lint-Gate machte sich selbst rot.** `ruff` stand als Bereich in den
+  Bauabhängigkeiten. Eine neue Nebenversion brachte neue Regeln mit, und weil
+  der Lint-Lauf im `check`-Job vor `build` und `publish` steht, fiel mit dem
+  Gate auch das Release aus — ohne dass sich eine Zeile Code geändert hätte.
+  **Jeder Lauf war so rot, zurück bis 0.1.10:** Die Tags v0.1.10 bis v0.1.12
+  stehen, veröffentlicht wurde nie etwas. `ruff` steht jetzt exakt auf
+  0.16.3, derselben Version wie in den anderen drei Programmen und wie lokal
+  installiert. Ein Test hält das fest: Bereich ist ein Fehler, und die lokal
+  installierte Version muss zur Pinnung passen.
+
+### Sicherheit
+
+- **Der Verifizierer kannte den eigenen Modulvertrag nicht.** `module.json`
+  deklariert seit dem v2-Umbau `lifeplanner.module.v2`, der Paketbauer
+  akzeptiert beide Schemata — nur `tools/verify_lpmodule.py`, das letzte Tor
+  vor der Veröffentlichung, prüfte weiter hart auf v1. Er hätte jedes eigene
+  Paket abgelehnt. Dieselbe Regel stand ein drittes Mal in `app_info.py`,
+  dort ebenfalls als v1; die Konstante las niemand — genau darum fiel es nicht
+  auf. Der Verifizierer verlangt bei v2 zusätzlich, dass `requires_host` in
+  `module.json` und `component.json` übereinstimmt: Der Host liest die
+  Anforderung aus dem Manifest, der Installer aus den Paketdaten.
+
+### Bedienung
+
+- **Menüleiste.** Datei / Ansicht / Extras / Hilfe an derselben Stelle wie in
+  den drei anderen Programmen der Suite. Expertenseiten bleiben im
+  Einfachmodus auch im Menü ausgeblendet.
+- **Der Datenordner lässt sich öffnen**, und Name, Version und Datenordner
+  stehen erstmals irgendwo im Programm.
+
+## 0.1.12 — 22. August 2026
+
+- Release-Trigger fail-closed und reproduzierbar; Wiederholungen tragen einen
+  überprüfbaren Erfolgsmarker und verschieben den Release-Tag nicht.
+
+## 0.1.11 — 22. August 2026
+
+- Pakettests auf den v2-Hostvertrag umgestellt; der Paketbauer unterstützt
+  `lifeplanner.module.v2`.
+
+## 0.1.10 — 22. August 2026
+
+### LifePlanner-Integration
+
+- **Fachevents folgen dem LifePlanner-Eventvertrag.** Ein kompatibler
+  Eventwriter ergänzt den bisherigen, und Regressionstests halten das Format
+  fest.
+- **`lifeplanner.module.v2` wird deklariert.**
+
 ## 0.1.9 – 22. August 2026
 
 ### Stabilität
