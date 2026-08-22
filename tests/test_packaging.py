@@ -51,7 +51,7 @@ def test_paket_hat_die_vom_host_erwartete_struktur(runtime, tmp_path):
     assert metadata["kind"] == "module"
     assert metadata["id"] == "freizeitmanager"
     assert metadata["platforms"] == ["linux-x86_64"]
-    assert metadata["requires_host"].startswith(">=")
+    assert metadata["requires_host"] == ">=0.5.15,<0.6"
 
 
 def test_payload_hash_passt_zum_tatsaechlichen_inhalt(runtime, tmp_path):
@@ -140,13 +140,13 @@ def test_signiertes_paket_ist_pruefbar(runtime, tmp_path):
 
 def test_modulmanifest_erfuellt_den_host_vertrag():
     manifest = load_manifest()
-    assert manifest["schema"] == "lifeplanner.module.v1"
+    assert manifest["schema"] == "lifeplanner.module.v2"
+    assert manifest["requires_host"] == ">=0.5.15,<0.6"
     assert manifest["source_entry"] == "main.py"
-    # Der Host uebergibt den Datenordner - das Modul darf ihn nicht selbst waehlen.
     assert manifest["environment"]["LIFEPLANNER_MODULE_DATA_DIR"] == "{module_data_dir}"
     assert manifest["environment"]["FREIZEITMANAGER_DATA_DIR"] == "{module_data_dir}"
     assert manifest["environment"]["LIFEPLANNER_BRIDGE_DIR"] == "{bridge_dir}"
-    # Kein Zugriff auf fremde Daten.
+    assert manifest["bridge"]["publishes"][0]["file"] == "freizeitmanager_to_lifeplanner.jsonl"
     assert set(manifest["permissions"]) <= {"own_data_read", "own_data_write",
                                             "bridge_read", "bridge_write",
                                             "network_optional"}
