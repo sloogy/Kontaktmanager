@@ -3,6 +3,8 @@ name: CI
 # Laeuft bewusst nicht auf Push nach main: beim Release werden main und Tag
 # zusammen gepusht, was sonst zwei parallele Laeufe fuer denselben Stand ergibt.
 # Die vollstaendigen Gates laufen im taggesteuerten Release-Workflow.
+# Fuer gewoehnliche Pushes nach main gibt es den schlanken Lauf in
+# push-checks.yml; hier bleibt der volle Satz.
 on:
   pull_request:
   workflow_dispatch:
