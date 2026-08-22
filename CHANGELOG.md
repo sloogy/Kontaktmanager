@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.1.9 – 22. August 2026
 
 ### Stabilität
 

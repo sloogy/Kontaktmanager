@@ -3,7 +3,7 @@ from __future__ import annotations
 
 APP_ID = "freizeitmanager"
 APP_NAME = "FreizeitManager"
-APP_VERSION = "0.1.8"
+APP_VERSION = "0.1.9"
 DB_FILENAME = "freizeitmanager.db"
 
 # Vertrag gegenueber dem LifePlanner-Host (docs/MODUL_HOST_VERTRAG.md).
