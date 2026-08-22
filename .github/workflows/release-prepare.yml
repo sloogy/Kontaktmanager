@@ -1,0 +1,72 @@
+name: Prepare Release Tag
+
+on:
+  push:
+    branches:
+      - 'release-trigger/v*'
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: freizeitmanager-release-prepare-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Version aus Release-Branch übernehmen
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME#release-trigger/}"
+          VERSION="${TAG#v}"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          python - "$VERSION" <<'PY'
+          import json, sys
+          from pathlib import Path
+          path = Path('version.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          data['version'] = sys.argv[1]
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+          python tools/sync_version.py
+          python tools/sync_version.py --check
+
+      - name: Synchronisierten Release-Commit erzeugen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "release: FreizeitManager ${GITHUB_REF_NAME#release-trigger/v}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Tag einmalig erzeugen und bestehenden Release-Workflow starten
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME#release-trigger/}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} existiert bereits; Abbruch statt Überschreiben." >&2
+            exit 1
+          fi
+          git tag "$TAG" HEAD
+          git push origin "$TAG"
+          gh workflow run release.yml --ref "$TAG" -f tag="$TAG"
