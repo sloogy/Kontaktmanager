@@ -2,6 +2,23 @@
 
 ## Unveröffentlicht
 
+### Funktion
+
+- **Die Vorschläge des Cockpits erscheinen jetzt auch im LifePlanner.** Das
+  Schema `lifeplanner.notice.v1` stammt aus genau diesem Modul: `publish_focus`
+  schrieb solche Meldungen als einziges — nur in einem eigenen Format, das nur
+  der Host kannte. Seit LifePlanner 0.5.16 lesen alle Module dasselbe, und der
+  FreizeitManager hängt jetzt daran.
+
+  Beides bleibt bestehen: `freizeitmanager.focus.v1` trägt weiterhin die
+  Zählwerte der Fokus-Zusammenfassung, die neue Datei die Meldungen.
+
+  **Keine Stufe wird `kritisch`.** Eine Freundschaft, die still geworden ist,
+  ist kein Alarm — sie würde im Host sonst neben einem überzogenen Budget
+  stehen. Das Programm ist ausdrücklich so gebaut, dass es keinen Schuldenberg
+  aufbaut; das gilt auch für das Dashboard des Hosts. Höchstens drei Meldungen,
+  wie im Cockpit. Ein Test hält beides fest. Handbuch in drei Sprachen.
+
 ### Dokumentation
 
 - **Das README sagt jetzt zuerst, was das Programm tut.** Vorher stand dort

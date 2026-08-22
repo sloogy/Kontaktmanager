@@ -123,6 +123,8 @@ Sous **Apparence**, vous choisissez un profil de design et la taille de police. 
 
 Si le FreizeitManager est connecté au LifePlanner, il ne transmet sur demande que des compteurs et les prochaines étapes – jamais les notes.
 
+Les prochaines étapes apparaissent alors aussi sur la page d'aperçu du LifePlanner, à côté des messages des autres programmes – trois au maximum, comme dans le cockpit. Seule la ligne finie est transmise : qui serait à contacter et ce qui conviendrait. Une amitié devenue silencieuse n'y est délibérément jamais marquée comme urgente ; aucune montagne de dettes ne doit se former dans le LifePlanner non plus. Qui vous avez contacté aujourd'hui disparaît de la liste de lui-même.
+
 ---
 
 Généré à partir de l'aide de l'application avec `tools/build_handbook.py`. Les modifications vont dans `freizeitmanager/i18n/fr.json` sous `help.topics`.

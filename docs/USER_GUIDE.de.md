@@ -123,6 +123,8 @@ Beim **Erscheinungsbild** wählen Sie ein Designprofil und die Schriftgröße. L
 
 Ist der FreizeitManager mit dem LifePlanner verbunden, meldet er auf Wunsch nur Zählwerte und die nächsten Schritte weiter – niemals Notizen.
 
+Die nächsten Schritte erscheinen dann auch auf der Übersichtsseite des LifePlanners, neben den Meldungen der anderen Programme – höchstens drei, wie im Cockpit. Übertragen wird nur die fertige Zeile: wer dran wäre und was sich anbietet. Eine still gewordene Freundschaft wird dort bewusst nie als dringend markiert; ein Schuldenberg soll auch im LifePlanner keiner entstehen. Wer heute Kontakt hatte, verschwindet von selbst aus der Liste.
+
 ---
 
 Erzeugt aus der Hilfe der Anwendung mit `tools/build_handbook.py`. Aenderungen gehoeren in `freizeitmanager/i18n/de.json` unter `help.topics`.

@@ -25,8 +25,10 @@ from PySide6.QtWidgets import (
 
 from freizeitmanager.database import db
 from freizeitmanager.database.models import Contact
+from freizeitmanager.defensive_log import uebersprungen
 from freizeitmanager.i18n.translator import t
 from freizeitmanager.integration import lifeplanner_bridge as bridge
+from freizeitmanager.integration import lifeplanner_notices as notices
 from freizeitmanager.logic import contact_service as cs
 from freizeitmanager.logic import dashboard_service as dash
 from freizeitmanager.logic import rotation_engine as rot
@@ -170,6 +172,15 @@ class DashboardWidget(QWidget):
                                          exclude_ids=self._excluded or None)
             if db.get_bool_setting(session, "bridge.enabled", True):
                 bridge.publish_focus(cockpit)
+                # Zweite Datei, andere Aufgabe: Der Fokus traegt die
+                # Zaehlwerte fuer den Host, die Meldungen stehen im
+                # Dashboard neben denen der anderen Module. Ein Fehler
+                # bleibt folgenlos - das Cockpit hier ist davon nicht
+                # betroffen.
+                try:
+                    notices.publish_notices(cockpit)
+                except (OSError, ValueError) as fehler:
+                    uebersprungen("Host-Meldungen schreiben", fehler)
         self._render(cockpit)
 
     def _render(self, cockpit: dash.Cockpit) -> None:

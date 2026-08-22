@@ -123,6 +123,8 @@ Under **Appearance** you choose a design profile and the font size. If the Freiz
 
 If the FreizeitManager is connected to the LifePlanner, on request it passes on counts and next steps only – never notes.
 
+The next steps then also appear on LifePlanner's overview page, next to the notices from the other programs – at most three, as in the cockpit. Only the finished line is transferred: who is due and what would suit. A friendship that has gone quiet is deliberately never marked as urgent there; no pile of debts should build up in LifePlanner either. Anyone you contacted today disappears from the list on its own.
+
 ---
 
 Generated from the application's help with `tools/build_handbook.py`. Edits belong in `freizeitmanager/i18n/en.json` under `help.topics`.
