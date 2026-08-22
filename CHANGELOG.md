@@ -2,6 +2,16 @@
 
 ## Unveröffentlicht
 
+### Dokumentation
+
+- **Das README sagt jetzt zuerst, was das Programm tut.** Vorher stand dort
+  Technik: eine Tabelle aus Dateipfaden. Die fachlich stärksten Passagen —
+  Beziehungsfrische, „kein Schuldenberg" — lagen zwischen Build-Kommandos
+  begraben und sind jetzt oben. Wer wissen wollte, wofür das Programm da ist,
+  fand einen Satz und danach die Bauanleitung. Der fachliche Teil steht jetzt
+  vorn und beantwortet, was man mit dem Programm tut und für wen es gedacht
+  ist; das Technische folgt darunter. Drei Tests halten die Reihenfolge fest.
+
 ### Sicherheit
 
 - **Ein stummer Schlucker, den der Ratchet nicht sehen konnte.** Der
