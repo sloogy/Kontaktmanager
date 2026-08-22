@@ -12,7 +12,7 @@ import os
 import shutil
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from freizeitmanager import paths
@@ -65,7 +65,7 @@ def publish_event(event_type: str, payload: dict | None = None) -> Path | None:
         "schema": "lifeplanner.event.v1",
         "event_type": event_type,
         "source": "freizeitmanager",
-        "occurred_at": datetime.now(timezone.utc).isoformat(),
+        "occurred_at": datetime.now(UTC).isoformat(),
         "profile_id": os.environ.get("LIFEPLANNER_PROFILE_ID", ""),
         "payload": payload or {},
     }

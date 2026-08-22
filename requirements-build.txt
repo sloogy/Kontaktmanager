@@ -1,5 +1,9 @@
 # Build- und Pruefabhaengigkeiten. Fuer den reinen Betrieb nicht noetig.
 pyinstaller>=6.0
 pytest>=8.0
-ruff>=0.12,<1.0
+# Genau gepinnt, nicht als Bereich: ruff fuehrt in Nebenversionen neue Regeln
+# ein. Mit einem Bereich wird ein Lauf rot, ohne dass sich eine Zeile Code
+# geaendert hat - und weil der Lint-Lauf ueber Releases entscheidet, faellt
+# damit auch das Release aus. Anheben ist ein bewusster Commit.
+ruff==0.16.3
 cryptography>=43.0,<47.0

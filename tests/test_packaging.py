@@ -148,8 +148,8 @@ def test_app_info_kennt_dasselbe_modulschema_wie_das_manifest():
     from freizeitmanager.app_info import APP_VERSION, MODULE_SCHEMA
 
     manifest = load_manifest()
-    assert MODULE_SCHEMA == manifest["schema"]
-    assert APP_VERSION == manifest["version"]
+    assert manifest["schema"] == MODULE_SCHEMA
+    assert manifest["version"] == APP_VERSION
 
 
 def test_verifizierer_akzeptiert_beide_modulschemata():
