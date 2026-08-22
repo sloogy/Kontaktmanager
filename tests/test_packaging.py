@@ -138,6 +138,51 @@ def test_signiertes_paket_ist_pruefbar(runtime, tmp_path):
     assert metadata["release_tag"] == "v0.1.0"
 
 
+def test_app_info_kennt_dasselbe_modulschema_wie_das_manifest():
+    """Die Version im Programm und die im Manifest muessen dieselbe sein.
+
+    ``app_info.MODULE_SCHEMA`` stand auf v1, waehrend module.json laengst v2
+    deklarierte - und weil die Konstante gerade niemand las, fiel es nicht auf.
+    Wer sie das naechste Mal liest, bekaeme die falsche Antwort.
+    """
+    from freizeitmanager.app_info import APP_VERSION, MODULE_SCHEMA
+
+    manifest = load_manifest()
+    assert MODULE_SCHEMA == manifest["schema"]
+    assert APP_VERSION == manifest["version"]
+
+
+def test_verifizierer_akzeptiert_beide_modulschemata():
+    """v1-Pakete bleiben installierbar; nur v2 verlangt zusaetzlich requires_host."""
+    from tools.verify_lpmodule import MODULE_SCHEMAS
+
+    assert set(MODULE_SCHEMAS) == {"lifeplanner.module.v1", "lifeplanner.module.v2"}
+
+
+def test_verifizierer_erkennt_abweichende_hostanforderung(runtime, tmp_path):
+    """requires_host steht in component.json und module.json - beide muessen gleich sein.
+
+    Der Host liest die Anforderung aus dem Manifest, der Installer aus den
+    Paketdaten. Weichen sie ab, prueft jeder etwas anderes, und ein Modul kann
+    an der Installation vorbei in einen Host geraten, den es nicht bedient.
+    """
+    from tools.verify_lpmodule import verify
+
+    package = _pack(runtime, tmp_path)
+    manipuliert = tmp_path / "fremde_hostanforderung.lpmodule"
+    with zipfile.ZipFile(package) as src, \
+            zipfile.ZipFile(manipuliert, "w", zipfile.ZIP_DEFLATED) as dst:
+        for info in src.infolist():
+            data = src.read(info.filename)
+            if info.filename == "component.json":
+                metadata = json.loads(data)
+                metadata["requires_host"] = ">=99.0.0"
+                data = json.dumps(metadata).encode("utf-8")
+            dst.writestr(info, data)
+
+    assert any("requires_host" in p for p in verify(manipuliert))
+
+
 def test_modulmanifest_erfuellt_den_host_vertrag():
     manifest = load_manifest()
     assert manifest["schema"] == "lifeplanner.module.v2"

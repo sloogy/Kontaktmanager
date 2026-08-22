@@ -64,7 +64,10 @@ def sicher_entpacken(archive: zipfile.ZipFile, ziel: Path) -> None:
     archive.extractall(ziel)
 
 COMPONENT_SCHEMA = "lifeplanner.component.v1"
-MODULE_SCHEMA = "lifeplanner.module.v1"
+# Beide Modulschemata sind gueltig - wie im Paketbauer und in FPMs
+# Referenz-Verifizierer. v2 ist v1 plus requires_host: der Host prueft damit
+# vor dem Start, ob er das Modul ueberhaupt bedienen kann.
+MODULE_SCHEMAS = ("lifeplanner.module.v1", "lifeplanner.module.v2")
 
 
 def verify(package: Path, *, expect_version: str = "", expect_platform: str = "",
@@ -93,8 +96,19 @@ def verify(package: Path, *, expect_version: str = "", expect_platform: str = ""
             problems.append("payload/module.json fehlt")
             return problems
         manifest = json.loads(archive.read("payload/module.json"))
-        if manifest.get("schema") != MODULE_SCHEMA:
-            problems.append(f"Modulschema {manifest.get('schema')!r} statt {MODULE_SCHEMA}")
+        module_schema = manifest.get("schema")
+        if module_schema not in MODULE_SCHEMAS:
+            problems.append(
+                f"Modulschema {module_schema!r} statt {' oder '.join(MODULE_SCHEMAS)}")
+        elif module_schema == "lifeplanner.module.v2":
+            # Die Hostanforderung darf nicht nur aussen am Paket stehen: der
+            # Host liest sie aus dem Manifest, der Installer aus component.json.
+            # Weichen sie ab, prueft jeder etwas anderes.
+            verlangt = str(manifest.get("requires_host", "")).strip()
+            if not verlangt:
+                problems.append("module.v2 ohne requires_host")
+            elif verlangt != str(metadata.get("requires_host", "")).strip():
+                problems.append("requires_host in module.json weicht von component.json ab")
         if manifest.get("version") != metadata.get("version"):
             problems.append("Version in module.json weicht von component.json ab")
 

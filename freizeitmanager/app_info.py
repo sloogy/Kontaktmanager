@@ -7,5 +7,5 @@ APP_VERSION = "0.1.12"
 DB_FILENAME = "freizeitmanager.db"
 
 # Vertrag gegenueber dem LifePlanner-Host (docs/MODUL_HOST_VERTRAG.md).
-MODULE_SCHEMA = "lifeplanner.module.v1"
+MODULE_SCHEMA = "lifeplanner.module.v2"
 BRIDGE_SCHEMA = "freizeitmanager.focus.v1"
