@@ -14,6 +14,14 @@ on:
 permissions:
   contents: write
 
+# Zwei Laeufe fuer denselben Stand duerfen sich nie ueberholen: Die Assets
+# sind signiert, das Manifest traegt ihre Hashes. Kommen Manifest und Paket
+# aus verschiedenen Builds, passt die Signatur nicht mehr und der Updater
+# lehnt fail-closed ab.
+concurrency:
+  group: freizeitmanager-release-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
