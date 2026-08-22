@@ -9,7 +9,7 @@ Das Paketformat ist durch ``lifeplanner_core/module_installer.py`` vorgegeben:
     payload/<Runtime>/...
 
 Das Werkzeug baut die Anwendung bewusst NICHT selbst. Es verpackt nur eine
-bereits erzeugte und geprueft Runtime - so kann die Pipeline zwischen Bauen,
+bereits erzeugte und gepruefte Runtime - so kann die Pipeline zwischen Bauen,
 Pruefen und Veroeffentlichen sauber trennen.
 """
 from __future__ import annotations
@@ -35,7 +35,6 @@ PLATFORM_SUFFIX = {
 }
 
 COMPONENT_SCHEMA = "lifeplanner.component.v1"
-DEFAULT_REQUIRES_HOST = ">=0.5.0"
 
 
 def canonical_json(data: dict) -> bytes:
@@ -52,8 +51,12 @@ def load_manifest() -> dict:
     if manifest.get("version") != APP_VERSION:
         raise ValueError(f"module.json {manifest.get('version')} != app_info {APP_VERSION}; "
                          "python3 tools/sync_version.py ausfuehren")
-    if manifest.get("schema") != "lifeplanner.module.v1":
+    if manifest.get("schema") not in {"lifeplanner.module.v1", "lifeplanner.module.v2"}:
         raise ValueError(f"Unerwartetes Modulschema: {manifest.get('schema')!r}")
+    if manifest.get("schema") == "lifeplanner.module.v2" and not str(
+        manifest.get("requires_host", "")
+    ).strip():
+        raise ValueError("lifeplanner.module.v2 benötigt requires_host")
     return manifest
 
 
@@ -69,10 +72,6 @@ def _validate_runtime(runtime_dir: Path, runtime_name: str) -> Path:
     if not runtime.is_dir():
         raise ValueError(f"Runtime-Verzeichnis fehlt: {runtime}")
 
-    # PyInstaller legt fuer verschobene Bibliotheken Symlinks an. Zeigt einer
-    # ins Leere, ist die Runtime defekt - und zwar oft, ohne dass die
-    # Anwendung es beim Start merkt. Lieber hier abbrechen als ein Paket
-    # ausliefern, das erst bei einer selten genutzten Funktion zerbricht.
     dangling = sorted(str(path.relative_to(runtime))
                       for path in runtime.rglob("*")
                       if path.is_symlink() and not path.exists())
@@ -84,13 +83,14 @@ def _validate_runtime(runtime_dir: Path, runtime_name: str) -> Path:
 
 
 def build_module(*, runtime_dir: Path, runtime_name: str, platform: str,
-                 output: Path, requires_host: str = DEFAULT_REQUIRES_HOST,
+                 output: Path, requires_host: str | None = None,
                  private_key_b64: str | None = None,
                  release_tag: str | None = None) -> Path:
     if platform not in PLATFORM_SUFFIX:
         raise ValueError(f"Nicht unterstuetzte Plattform: {platform}")
     runtime = _validate_runtime(runtime_dir, runtime_name)
     manifest = load_manifest()
+    requires_host = str(requires_host or manifest.get("requires_host") or ">=0.5.0").strip()
 
     executable = _declared_executable(manifest, platform)
     if not executable:
@@ -140,11 +140,6 @@ def build_module(*, runtime_dir: Path, runtime_name: str, platform: str,
                 info.compress_type = zipfile.ZIP_DEFLATED
                 mode = stat.S_IMODE(info.external_attr >> 16) or 0o644
                 if arcname == exe_arcname:
-                    # Das Ausfuehrbit wird direkt ins Archiv geschrieben, nicht
-                    # vom Dateisystem uebernommen: CI-Artefakte verlieren Unix-
-                    # Rechte, und ein Linux-Paket kann auf einem Windows-Runner
-                    # entstehen. Ohne das startet das Modul mit "Errno 13".
-                    # Leserechte werden gespiegelt; nie setuid/setgid/sticky.
                     mode |= (mode & 0o444) >> 2
                 info.external_attr = (mode & 0o7777) << 16
                 with path.open("rb") as source, archive.open(info, "w") as target:
@@ -160,7 +155,8 @@ def main() -> int:
                         help="Verzeichnisname im Paket, muss zu module.json passen")
     parser.add_argument("--platform", required=True, choices=sorted(PLATFORM_SUFFIX))
     parser.add_argument("--output-dir", type=Path, default=ROOT / "dist")
-    parser.add_argument("--requires-host", default=DEFAULT_REQUIRES_HOST)
+    parser.add_argument("--requires-host", default="",
+                        help="optional; sonst wird module.json.requires_host verwendet")
     parser.add_argument("--release-tag", default="")
     parser.add_argument("--signing-key-env", default="",
                         help="Name der Umgebungsvariable mit dem privaten Ed25519-Schluessel")
@@ -179,7 +175,7 @@ def main() -> int:
     output = args.output_dir / module_asset_name(manifest["id"], manifest["version"], args.platform)
     target = build_module(runtime_dir=args.runtime_dir, runtime_name=args.runtime_name,
                           platform=args.platform, output=output,
-                          requires_host=args.requires_host,
+                          requires_host=args.requires_host or None,
                           private_key_b64=private_key or None,
                           release_tag=args.release_tag or None)
     size = target.stat().st_size / (1024 * 1024)
