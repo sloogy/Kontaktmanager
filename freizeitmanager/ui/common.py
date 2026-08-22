@@ -249,3 +249,38 @@ class CalmCard(QFrame):
         label.setWordWrap(True)
         layout.addWidget(label)
         layout.addStretch(1)
+
+
+def open_in_file_manager(parent, folder) -> bool:
+    """Öffnet einen Ordner im Dateimanager des Systems. True bei Erfolg.
+
+    Wortgleich zu FPM (``ui/common.py``, Loop 32). Angelegt, als die
+    Menüleiste den Befehl anbot - vorher gab es ihn im FreizeitManager gar
+    nicht, und der Nutzer musste den Pfad aus den Einstellungen abschreiben.
+    """
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    from PySide6.QtWidgets import QMessageBox
+
+    from freizeitmanager.i18n.translator import t
+
+    ordner = Path(folder)
+    try:
+        if sys.platform.startswith("linux"):
+            subprocess.Popen(["xdg-open", str(ordner)])
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", str(ordner)])
+        else:
+            import os
+
+            os.startfile(str(ordner))  # type: ignore[attr-defined]
+        return True
+    except OSError as fehler:
+        QMessageBox.warning(
+            parent,
+            t("menu.folder_open_title"),
+            t("menu.folder_open_error", error=str(fehler)),
+        )
+        return False

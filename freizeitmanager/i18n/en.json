@@ -394,5 +394,34 @@
         "body": "Under <b>Settings</b> you set how many suggestions the cockpit shows, how long things rest after a contact and how many social days per week suit you.\n\n<b>Language</b> applies immediately, without a restart – German, English and French.\n\nUnder <b>Appearance</b> you choose a design profile and the font size. If the FreizeitManager runs inside the LifePlanner, it can adopt the profile set centrally there.\n\n<b>Create backup</b> stores a copy of the database. The data folder is named on the same page.\n\nIf the FreizeitManager is connected to the LifePlanner, on request it passes on counts and next steps only – never notes."
       }
     }
+  },
+  "menu": {
+    "about": "&About",
+    "about_data": "Data folder:",
+    "about_title": "About FreizeitManager",
+    "add_contact": "Add &contact…",
+    "add_contact_tip": "Creates a new contact",
+    "exit": "E&xit",
+    "exit_tip": "Close FreizeitManager",
+    "extras": "E&xtras",
+    "file": "&File",
+    "folder_open_error": "The folder could not be opened: {error}",
+    "folder_open_title": "Open folder",
+    "fullscreen": "&Full screen",
+    "fullscreen_tip": "Fill the whole screen",
+    "help": "&Help",
+    "manual": "&Manual",
+    "manual_tip": "Opens the help",
+    "mode": "View &mode",
+    "mode_expert": "E&xpert",
+    "mode_simple": "&Simple",
+    "open_data_folder": "Open data f&older",
+    "open_data_folder_tip": "Opens the folder holding the database and backups",
+    "pages": "Go to &page",
+    "settings": "&Settings",
+    "settings_tip": "Appearance, language and data",
+    "toggle_mode": "Toggle &mode",
+    "toggle_mode_tip": "Switches between simple and expert mode",
+    "view": "&View"
   }
 }

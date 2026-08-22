@@ -75,8 +75,22 @@ class MainWindow(QMainWindow):
         bus.language_changed.connect(self._rebuild_for_language)
         bus.theme_changed.connect(self._apply_theme)
         self._watch_system_color_scheme()
+        self._setup_menu_bar()
         self._apply_mode()
         self.show_page("cockpit")
+
+    def _setup_menu_bar(self) -> None:
+        """Menueleiste nach BudgetManager-Vorbild (Loop 33).
+
+        Sie ersetzt die Seitenleiste nicht, sondern ergaenzt sie: Wer den
+        FreizeitManager kennt, soll nach dem Update nicht umlernen muessen -
+        wer aus dem BudgetManager kommt, findet Datei/Ansicht/Extras/Hilfe
+        dort, wo er sie sucht.
+        """
+        from freizeitmanager.ui.menu_bar import build_menu_bar, sync_menu_state
+
+        build_menu_bar(self)
+        sync_menu_state(self)
 
     def _watch_system_color_scheme(self) -> None:
         """Auf den Hell/Dunkel-Wechsel des Betriebssystems reagieren.
@@ -167,7 +181,10 @@ class MainWindow(QMainWindow):
         Qt uebersetzt gesetzte Beschriftungen nicht nachtraeglich. Ein
         Neuaufbau ist hier ehrlicher als hunderte setText-Aufrufe zu pflegen,
         von denen frueher oder spaeter einer vergessen wird.
+
+        Die Menueleiste ist derselbe Fall - sie wird ebenfalls neu gebaut.
         """
+        self._setup_menu_bar()
         for key, label_key, _ in PAGES:
             self._nav_buttons[key].setText(t(label_key))
         self._help_button.setText(t("help.button"))
@@ -222,6 +239,9 @@ class MainWindow(QMainWindow):
         self._apply_mode()
 
     def _apply_mode(self) -> None:
+        from freizeitmanager.ui.menu_bar import sync_menu_state
+
+        sync_menu_state(self)
         for key, _label, expert_only in PAGES:
             self._nav_buttons[key].setVisible(self._expert or not expert_only)
         self._mode_button.setText(

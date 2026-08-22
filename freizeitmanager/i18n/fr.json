@@ -394,5 +394,34 @@
         "body": "Sous <b>Réglages</b>, vous définissez le nombre de suggestions du cockpit, la durée du repos après un contact et le nombre de jours sociaux par semaine qui vous convient.\n\nLa <b>langue</b> s'applique immédiatement, sans redémarrage – allemand, anglais et français.\n\nSous <b>Apparence</b>, vous choisissez un profil de design et la taille de police. Si le FreizeitManager tourne dans le LifePlanner, il peut reprendre le profil défini de façon centrale.\n\n<b>Créer une sauvegarde</b> dépose une copie de la base de données. Le dossier de données est indiqué sur la même page.\n\nSi le FreizeitManager est connecté au LifePlanner, il ne transmet sur demande que des compteurs et les prochaines étapes – jamais les notes."
       }
     }
+  },
+  "menu": {
+    "about": "À &propos",
+    "about_data": "Dossier de données :",
+    "about_title": "À propos de FreizeitManager",
+    "add_contact": "Ajouter un &contact…",
+    "add_contact_tip": "Crée un nouveau contact",
+    "exit": "&Quitter",
+    "exit_tip": "Fermer FreizeitManager",
+    "extras": "E&xtras",
+    "file": "&Fichier",
+    "folder_open_error": "Le dossier n'a pas pu être ouvert : {error}",
+    "folder_open_title": "Ouvrir le dossier",
+    "fullscreen": "&Plein écran",
+    "fullscreen_tip": "Occuper tout l'écran",
+    "help": "Ai&de",
+    "manual": "&Manuel",
+    "manual_tip": "Ouvre l'aide",
+    "mode": "&Mode d'affichage",
+    "mode_expert": "E&xpert",
+    "mode_simple": "&Simple",
+    "open_data_folder": "Ouvrir le d&ossier de données",
+    "open_data_folder_tip": "Ouvre le dossier contenant la base et les sauvegardes",
+    "pages": "Aller à la pa&ge",
+    "settings": "&Paramètres",
+    "settings_tip": "Apparence, langue et données",
+    "toggle_mode": "Changer de &mode",
+    "toggle_mode_tip": "Bascule entre le mode simple et le mode expert",
+    "view": "&Affichage"
   }
 }

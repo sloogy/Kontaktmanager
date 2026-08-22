@@ -394,5 +394,34 @@
         "body": "Unter <b>Einstellungen</b> stellen Sie ein, wie viele Vorschläge das Cockpit zeigt, wie lange nach einem Kontakt Ruhe herrscht und wie viele soziale Tage pro Woche zu Ihnen passen.\n\n<b>Sprache</b> gilt sofort, ohne Neustart – Deutsch, Englisch und Französisch.\n\nBeim <b>Erscheinungsbild</b> wählen Sie ein Designprofil und die Schriftgröße. Läuft der FreizeitManager im LifePlanner, kann er das dort zentral gesetzte Profil übernehmen.\n\n<b>Sicherung anlegen</b> legt eine Kopie der Datenbank ab. Der Datenordner ist auf derselben Seite genannt.\n\nIst der FreizeitManager mit dem LifePlanner verbunden, meldet er auf Wunsch nur Zählwerte und die nächsten Schritte weiter – niemals Notizen."
       }
     }
+  },
+  "menu": {
+    "about": "Ü&ber",
+    "about_data": "Datenordner:",
+    "about_title": "Über den FreizeitManager",
+    "add_contact": "&Kontakt anlegen…",
+    "add_contact_tip": "Legt einen neuen Kontakt an",
+    "exit": "&Beenden",
+    "exit_tip": "FreizeitManager schließen",
+    "extras": "E&xtras",
+    "file": "&Datei",
+    "folder_open_error": "Der Ordner ließ sich nicht öffnen: {error}",
+    "folder_open_title": "Ordner öffnen",
+    "fullscreen": "&Vollbild",
+    "fullscreen_tip": "Fenster auf den ganzen Bildschirm",
+    "help": "&Hilfe",
+    "manual": "&Handbuch",
+    "manual_tip": "Öffnet die Hilfe",
+    "mode": "Ansichts&modus",
+    "mode_expert": "E&xperte",
+    "mode_simple": "&Einfach",
+    "open_data_folder": "Daten&ordner öffnen",
+    "open_data_folder_tip": "Öffnet den Ordner mit Datenbank und Sicherungen",
+    "pages": "&Seite wechseln",
+    "settings": "&Einstellungen",
+    "settings_tip": "Darstellung, Sprache und Daten",
+    "toggle_mode": "Modus &umschalten",
+    "toggle_mode_tip": "Wechselt zwischen Einfach- und Expertenmodus",
+    "view": "&Ansicht"
   }
 }

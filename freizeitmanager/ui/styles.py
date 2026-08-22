@@ -245,12 +245,24 @@ QListWidget::item:selected {{
     background: {c('auswahl_hintergrund')};
     color: {c('auswahl_text')};
 }}
+/* Loop 33: Menue und Menueleiste nach der BudgetManager-Vorlage. Die Leiste
+   ist neu, das Kontextmenue gab es schon - beide tragen jetzt die abgestuften
+   Radien (Loop 9) und wachsen mit der Profilschrift (Loop 8). */
 QMenu {{
     background: {c('hintergrund_panel')};
     color: {c('text')};
     border: 1px solid {c('rand')};
+    border-radius: {radius}px;
+    padding: {_px(4, mass)}px;
+    font-size: {base}px;
 }}
+QMenu::item {{ padding: {_px(6, mass)}px {_px(18, mass)}px; border-radius: {radius_feld}px; }}
 QMenu::item:selected {{ background: {c('auswahl_hintergrund')}; color: {c('auswahl_text')}; }}
+QMenu::item:disabled {{ color: {c('text_gedimmt')}; }}
+QMenu::separator {{ height: 1px; background: {c('rand')}; margin: {_px(4, mass)}px {_px(8, mass)}px; }}
+QMenuBar {{ background: {c('hintergrund_panel')}; color: {c('text')}; font-size: {base}px; padding: {_px(2, mass)}px; }}
+QMenuBar::item {{ padding: {_px(4, mass)}px {_px(10, mass)}px; border-radius: {radius}px; }}
+QMenuBar::item:selected {{ background: {c('auswahl_hintergrund')}; color: {c('auswahl_text')}; }}
 QPushButton {{ min-height: {_px(28, mass)}px; }}
 
 QScrollArea {{ border: none; background: {c('hintergrund_app')}; }}
