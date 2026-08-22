@@ -51,13 +51,30 @@ def test_bridge_schreibt_atomar_ohne_tempdatei(session, tmp_path, monkeypatch):
     assert leftovers == []
 
 
-def test_event_landet_im_profilordner(session, tmp_path, monkeypatch):
+def test_event_landet_hostkompatibel_im_profilordner(session, tmp_path, monkeypatch):
     monkeypatch.setenv("LIFEPLANNER_BRIDGE_DIR", str(tmp_path / "profile" / "bridge"))
+    monkeypatch.setenv("LIFEPLANNER_PROFILE_ID", "default")
     bridge.emit_event(bridge.EVENT_INTERACTION_LOGGED, {"contact_id": 1})
-    lines = (tmp_path / "profile" / "events" / "events.jsonl").read_text(encoding="utf-8").splitlines()
+    event_dir = tmp_path / "profile" / "events"
+    lines = (event_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
     record = json.loads(lines[0])
     assert record["schema"] == "lifeplanner.event.v1"
-    assert record["event"] == "freizeit.interaction.logged"
+    assert record["event_type"] == "freizeit.interaction.logged"
+    assert record["source"] == "freizeitmanager"
+    assert record["profile_id"] == "default"
+    assert record["payload"] == {"contact_id": 1}
+    assert record["event_id"]
+    assert record["occurred_at"].endswith("+00:00")
+    assert set(record) == {
+        "event_id",
+        "schema",
+        "event_type",
+        "source",
+        "occurred_at",
+        "profile_id",
+        "payload",
+    }
+    assert not (event_dir / ".events.lock").exists()
 
 
 def _legacy_db(path):
