@@ -4,7 +4,7 @@
   "name": "FreizeitManager",
   "version": "0.2.1",
   "description": "Freundschaftspflege, Kontaktrotation, Aktivitaeten und Freizeitplanung.",
-  "requires_host": ">=0.5.15,<0.6",
+  "requires_host": ">=0.5.15,<1.0",
   "source_entry": "main.py",
   "windows_executable": "FreizeitManager/FreizeitManager.exe",
   "linux_executable": "FreizeitManager/FreizeitManager",
