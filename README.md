@@ -217,6 +217,21 @@ Nach `Liveplanner/docs/MODUL_HOST_VERTRAG.md` v1:
 Ohne gesetzte Host-Variablen sind Bridge und Events stille No-Ops –
 der FreizeitManager läuft vollständig standalone.
 
+## Prüfwerkzeuge
+
+`ruff` entscheidet über Releases. Es ist darum exakt gepinnt — eine neue
+Nebenversion bringt neue Regeln mit und macht einen Lauf rot, ohne dass sich
+eine Zeile Code geändert hätte.
+
+Damit lokal dasselbe gilt wie in der CI, nicht direkt aufrufen, sondern:
+
+```bash
+python3 tools/gepinnte_werkzeuge.py ruff check .
+```
+
+Das Skript fährt die Version aus `requirements-build.txt` in einer eigenen
+Umgebung. Ohne es urteilt die Version, die gerade im PATH liegt.
+
 ## Release
 
 

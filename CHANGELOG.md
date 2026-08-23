@@ -1,5 +1,20 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Ordnung
+
+- **Der Prüf-Wrapper fehlte als einzigem.** FPM, BudgetManager und LifePlanner
+  fahren ihre Prüfwerkzeuge seit Loop 37 beziehungsweise 57 über
+  `tools/gepinnte_werkzeuge.py`, das die gepinnte Version in einer eigenen
+  Umgebung startet. Hier galt bisher, was gerade im PATH lag.
+
+  Der vorhandene Test verlangte, dass die *lokal installierte* Version zur
+  Pinnung passt — das ist eine Zusage an den Entwicklerrechner, keine
+  Eigenschaft des Projekts. Wer eine andere Version hat, bekommt ein anderes
+  Urteil als die CI und sieht am eigenen grünen Lauf nicht, was der CI-Lauf
+  sehen wird.
+
 ## 0.2.1 — 23. August 2026
 
 Zwei Funde aus einem Probelauf der Typprüfung, und der Weg dorthin ist

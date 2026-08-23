@@ -76,3 +76,39 @@ def test_installierte_version_passt_zur_pinnung() -> None:
         f"lokal laeuft ruff {installiert}, die CI nimmt {erwartet} - "
         "die Gates urteilen dann verschieden"
     )
+
+
+def test_der_wrapper_gibt_es() -> None:
+    """Die Pinnung allein reicht nicht - sie muss sich auch fahren lassen.
+
+    Der Test oben verlangt, dass die *lokal installierte* Version zur Pinnung
+    passt. Das ist eine Zusage an den Entwicklerrechner, keine Eigenschaft des
+    Projekts: Wer eine andere Version hat, bekommt ein anderes Urteil als die
+    CI - und sieht am eigenen gruenen Lauf nicht, was der CI-Lauf sehen wird.
+
+    ``tools/gepinnte_werkzeuge.py`` faehrt die gepinnte Version in einer
+    eigenen Umgebung. Die anderen drei Programme der Suite haben ihn seit
+    Loop 37 beziehungsweise 57; hier fehlte er als einzigem.
+    """
+    from pathlib import Path
+
+    wurzel = Path(__file__).resolve().parents[1]
+    wrapper = wurzel / "tools" / "gepinnte_werkzeuge.py"
+    assert wrapper.is_file(), "tools/gepinnte_werkzeuge.py fehlt"
+
+    text = wrapper.read_text(encoding="utf-8")
+    # Er muss die Version aus den requirements lesen, nicht selbst eine nennen.
+    assert "requirements" in text
+    assert "gepinnte_version" in text
+
+
+def test_der_wrapper_nennt_keine_eigene_version() -> None:
+    """Sonst gaebe es zwei Wahrheiten - die requirements und ihn."""
+    import re
+    from pathlib import Path
+
+    wurzel = Path(__file__).resolve().parents[1]
+    text = (wurzel / "tools" / "gepinnte_werkzeuge.py").read_text(encoding="utf-8")
+    # Erlaubt ist die Musterzeile im Docstring; verboten eine echte Pinnung.
+    treffer = re.findall(r"(?m)^\s*[A-Z_]+\s*=\s*[\"']\d+\.\d+\.\d+[\"']", text)
+    assert not treffer, f"Der Wrapper nennt eigene Versionen: {treffer}"
