@@ -1,6 +1,11 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.2.0 — 23. August 2026
+
+Die Vorschläge des Fokus-Cockpits erscheinen jetzt auch im
+LifePlanner-Dashboard — bewusst nie als dringend, denn ein Schuldenberg soll
+auch dort keiner entstehen. Dazu ein stummer Schlucker, den der
+Ausnahmen-Ratchet bis Loop 45 nicht sehen konnte.
 
 ### Funktion
 
