@@ -1,6 +1,9 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.2.1 — 23. August 2026
+
+Zwei Funde aus einem Probelauf der Typprüfung, und der Weg dorthin ist
+dokumentiert.
 
 ### Ordnung
 
