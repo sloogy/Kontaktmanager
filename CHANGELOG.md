@@ -1,6 +1,20 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.2.2 — 23. August 2026
+
+Der Prüf-Wrapper fehlte als einzigem der vier, und die Hostgrenze des Moduls
+hing an der Nebenversion des LifePlanners statt am Manifest-Schema.
+
+### LifePlanner-Integration
+
+- **Die Hostgrenze hing an der Nebenversion statt am Manifest-Schema.** Das
+  Modul verlangte `>=0.5.15,<0.6`; seit der LifePlanner auf 0.6 steht, war das
+  Modul installiert und aktuell, durfte aber nicht mehr starten —
+  `requires_host` wird vor jedem Modulstart geprüft.
+
+  Die Obergrenze gehört an das Manifest-Schema, nicht an die Nebenversion des
+  Hosts: Ein neuer Vertrag heisst v3, und bis dahin ändert sich für das Modul
+  nichts. Sie steht jetzt auf `>=0.5.15,<1.0`.
 
 ### Ordnung
 

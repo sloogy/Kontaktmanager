@@ -1,4 +1,4 @@
-# FreizeitManager 0.2.1 – Manual
+# FreizeitManager 0.2.2 – Manual
 
 FreizeitManager helps you keep up with the people who matter, without
 turning that into a list of chores. It remembers who is important to you and

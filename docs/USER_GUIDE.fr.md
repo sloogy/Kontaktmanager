@@ -1,4 +1,4 @@
-# FreizeitManager 0.2.1 – Manuel
+# FreizeitManager 0.2.2 – Manuel
 
 FreizeitManager vous aide à entretenir vos relations sans en faire une liste
 de corvées. Il retient qui compte pour vous et à quel rythme vous souhaitez
