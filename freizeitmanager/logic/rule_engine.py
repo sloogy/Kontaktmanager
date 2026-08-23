@@ -117,32 +117,35 @@ def load_capacity(session: Session, today: date | None = None) -> CapacityState:
     week_start, week_end = _week_bounds(today)
     month_start, month_end = _month_bounds(today)
 
+    # Sprechende Namen statt viermal "row": Die vier Schleifen laufen ueber
+    # zwei verschiedene Tabellen, und wer die Stelle liest, musste
+    # zurueckblaettern, um zu wissen, was gerade gemeint ist.
     social_days: set[date] = set()
-    for row in session.scalars(
+    for interaktion in session.scalars(
         select(Interaction).where(Interaction.kind.in_(MEETING_KINDS),
                                   Interaction.occurred_on >= week_start,
                                   Interaction.occurred_on <= week_end)):
-        social_days.add(row.occurred_on)
-    for row in session.scalars(
+        social_days.add(interaktion.occurred_on)
+    for termin in session.scalars(
         select(PlannedActivity).where(PlannedActivity.status == "planned",
                                       PlannedActivity.planned_date >= week_start,
                                       PlannedActivity.planned_date <= week_end)):
-        social_days.add(row.planned_date)
+        social_days.add(termin.planned_date)
     state.social_days_used = len(social_days)
 
     weekend_days: set[date] = set()
-    for row in session.scalars(
+    for interaktion in session.scalars(
         select(Interaction).where(Interaction.kind.in_(MEETING_KINDS),
                                   Interaction.occurred_on >= month_start,
                                   Interaction.occurred_on <= month_end)):
-        if row.occurred_on.weekday() >= 5:
-            weekend_days.add(row.occurred_on)
-    for row in session.scalars(
+        if interaktion.occurred_on.weekday() >= 5:
+            weekend_days.add(interaktion.occurred_on)
+    for termin in session.scalars(
         select(PlannedActivity).where(PlannedActivity.status == "planned",
                                       PlannedActivity.planned_date >= month_start,
                                       PlannedActivity.planned_date <= month_end)):
-        if row.planned_date.weekday() >= 5:
-            weekend_days.add(row.planned_date)
+        if termin.planned_date.weekday() >= 5:
+            weekend_days.add(termin.planned_date)
     # Ein Wochenende zaehlt einmal, nicht zweimal (Sa + So).
     state.weekends_used = len({d.isocalendar()[:2] for d in weekend_days})
     return state

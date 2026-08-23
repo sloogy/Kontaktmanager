@@ -188,10 +188,10 @@ def system_mode() -> str | None:
         from PySide6.QtGui import QGuiApplication
     except ImportError:
         return None
-    app = QGuiApplication.instance()
-    if app is None:
-        return None
-    scheme = app.styleHints().colorScheme()
+    # styleHints() gehoert zu QGuiApplication und ist statisch - der Umweg
+    # ueber instance() war laenger und brauchte eine None-Pruefung, die die
+    # Sache nicht sicherer macht.
+    scheme = QGuiApplication.styleHints().colorScheme()
     if scheme == Qt.ColorScheme.Dark:
         return MODE_DARK
     if scheme == Qt.ColorScheme.Light:

@@ -1,5 +1,23 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Ordnung
+
+- **Zwei Funde aus einem Probelauf der Typprüfung.**
+  `QGuiApplication.instance().styleHints()` in `theme_manager.py` — der Umweg
+  über `instance()` war länger und zwang zu einer `None`-Prüfung, die nichts
+  sicherer macht; `styleHints()` ist statisch. Dieselbe Stelle gab es im
+  LifePlanner. Und in `rule_engine.py` liefen vier Schleifen über zwei
+  verschiedene Tabellen, alle mit der Variablen `row`: kein Fehler, aber wer
+  die Stelle las, musste zurückblättern.
+
+  Die Prüfung selbst ist noch nicht eingeschaltet. `docs/TYPPRUEFUNG.md` hält
+  fest, warum: Von 84 Meldungen haben 67 dieselbe Wurzel — das Datenmodell
+  deklariert 62 Spalten in der alten SQLAlchemy-Schreibweise, und ohne Typ
+  weiß mypy an keiner Verwendungsstelle etwas. Der Umbau gehört in einen
+  Schritt, in dem das Programm auch bedient werden kann.
+
 ## 0.2.0 — 23. August 2026
 
 Die Vorschläge des Fokus-Cockpits erscheinen jetzt auch im
