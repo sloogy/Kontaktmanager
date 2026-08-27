@@ -12,9 +12,46 @@ from __future__ import annotations
 
 from freizeitmanager.ui.theme_manager import ThemeManager, ThemeProfile
 
+#: Mindestbreite der Seitenleiste, unskaliert.
+SEITENLEISTE_MIN_BREITE = 210
+
+#: Groesste Breite der Seitenleiste, unskaliert.
+SEITENLEISTE_MAX_BREITE = 250
+
+#: Seitlicher Innenabstand der Marken-Flaeche in der Seitenleiste, unskaliert.
+SEITENLEISTE_INNENABSTAND = 16
+
 
 def _px(value: float, scale: float) -> int:
     return max(1, int(round(float(value) * float(scale))))
+
+
+def _mass(scale: float, profile: ThemeProfile) -> float:
+    """Der gemeinsame Massstab fuer Raender und Abstaende.
+
+    Zwei Faktoren, bewusst getrennt: ``scale`` ist die Bedienskalierung der
+    Oberflaeche, der Profilanteil bringt die eingestellte Schriftgroesse ein.
+    """
+    return max(0.85, min(1.50, float(scale) * profile.point_size / 10.0))
+
+
+def sidebar_logo_breite(profile: ThemeProfile | None = None, scale: float = 1.0) -> int:
+    """Wieviel Platz das Banner in der Seitenleiste hat.
+
+    Die Zahl muss zum Stylesheet passen, sonst laeuft das Banner entweder aus
+    der Leiste heraus oder schwimmt darin. Sie wird deshalb aus denselben
+    Konstanten berechnet, die das Stylesheet unten einsetzt, statt an der
+    Aufrufstelle noch einmal geschaetzt zu werden.
+
+    Gerechnet wird mit der *Mindest*breite: Die Leiste darf zwischen 210 und
+    250 Punkten liegen, und ein Banner, das nur in der breiten Fassung passt,
+    waere in der schmalen abgeschnitten.
+    """
+    profile = profile or ThemeManager.instance().current_profile()
+    scale = max(0.85, min(1.50, float(scale or 1.0)))
+    mass = _mass(scale, profile)
+    innen = SEITENLEISTE_MIN_BREITE - 2 * SEITENLEISTE_INNENABSTAND
+    return max(1, _px(innen, mass))
 
 
 def get_stylesheet(scale: float = 1.0, profile: ThemeProfile | None = None) -> str:
@@ -28,7 +65,7 @@ def get_stylesheet(scale: float = 1.0, profile: ThemeProfile | None = None) -> s
     # und Abstaende folgen ``mass``, damit sie bei grosser Schrift mitwachsen -
     # die Schriftgroesse selbst darf das nicht, sonst zaehlte die Einstellung
     # doppelt.
-    mass = max(0.85, min(1.50, scale * profile.point_size / 10.0))
+    mass = _mass(scale, profile)
     small = max(1, base - 1)
     tiny = max(1, base - 2)
     nav = base + 1
@@ -78,15 +115,15 @@ QToolTip {{
 QWidget#sidebar {{
     background-color: {c('hintergrund_seitenleiste')};
     border-right: 3px solid {c('akzent')};
-    min-width: {_px(210, mass)}px;
-    max-width: {_px(250, mass)}px;
+    min-width: {_px(SEITENLEISTE_MIN_BREITE, mass)}px;
+    max-width: {_px(SEITENLEISTE_MAX_BREITE, mass)}px;
 }}
 QWidget#sidebar QWidget {{ background-color: {c('hintergrund_seitenleiste')}; }}
 QLabel#sidebarLogo {{
     color: {c('seitenleiste_text')};
     font-size: {base + 3}px;
     font-weight: 800;
-    padding: {_px(20, mass)}px {_px(16, mass)}px {_px(14, mass)}px {_px(16, mass)}px;
+    padding: {_px(20, mass)}px {_px(SEITENLEISTE_INNENABSTAND, mass)}px {_px(14, mass)}px {_px(SEITENLEISTE_INNENABSTAND, mass)}px;
 }}
 QPushButton#navButton {{
     background-color: transparent;

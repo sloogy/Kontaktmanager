@@ -157,12 +157,21 @@ def _ueber_zeigen(fenster) -> None:
 
     from freizeitmanager.app_info import APP_NAME, APP_VERSION
     from freizeitmanager.paths import data_dir
+    from freizeitmanager.ui.branding import icon_pixmap
 
-    QMessageBox.information(
-        fenster,
-        t("menu.about_title"),
-        f"{APP_NAME} {APP_VERSION}\n\n{t('menu.about_data')}\n{data_dir()}",
-    )
+    dialog = QMessageBox(fenster)
+    dialog.setWindowTitle(t("menu.about_title"))
+    dialog.setText(f"{APP_NAME} {APP_VERSION}\n\n{t('menu.about_data')}\n{data_dir()}")
+    # An dieser Stelle das quadratische Programmsymbol und nicht das breite
+    # Banner: QMessageBox stellt links eine quadratische Flaeche bereit und
+    # zieht den Text daneben. Ein dreimal so breites Bild wuerde den Dialog
+    # entweder auseinanderziehen oder gestaucht wirken.
+    symbol = icon_pixmap(64, device_pixel_ratio=fenster.devicePixelRatioF())
+    if symbol is not None:
+        dialog.setIconPixmap(symbol)
+    else:
+        dialog.setIcon(QMessageBox.Icon.Information)
+    dialog.exec()
 
 
 def _vollbild(fenster, an: bool) -> None:

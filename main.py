@@ -130,6 +130,26 @@ def _smoke() -> int:
                 _say(f"FEHLER: Themeprofil {name} ({path}): {message}")
             return 1
 
+        # Und dasselbe fuer die Markenbilder: Sie werden ueber den Dateipfad
+        # geladen, nicht importiert - PyInstaller findet sie nur, weil die
+        # .spec sie auffuehrt. Fehlt der Eintrag, startet das gebaute
+        # Programm ohne Fenstersymbol und ohne Startbildschirm, und niemand
+        # merkt es vor der Auslieferung.
+        from freizeitmanager import branding
+        fehlende_bilder = [
+            name for name, pfad in (
+                ("Programmsymbol", branding.app_icon_pfad()),
+                ("Banner (hell)", branding.logo_pfad()),
+                ("Banner (dunkel)", branding.logo_pfad(fuer_dunklen_untergrund=True)),
+            ) if pfad is None
+        ]
+        if fehlende_bilder:
+            _say(f"FEHLER: Markenbilder fehlen im Paket: {', '.join(fehlende_bilder)}")
+            return 1
+        if not branding.app_icon_pfade():
+            _say("FEHLER: Keine einzige Groesse des Programmsymbols im Paket.")
+            return 1
+
         window.close()
         db.reset_engine()
     from freizeitmanager.i18n.translator import t
@@ -161,21 +181,46 @@ def main() -> int:
         _log.warning("Zweite Instanz blockiert: %s", grund)
         _say(grund)
         return 0
-    from freizeitmanager.i18n.translator import load_language_from_settings
-    db.initialize_database()
-    load_language_from_settings()
-    _import_legacy_once()
-    bridge.emit_event("module.started", {"version": APP_VERSION})
-
+    # Die Oberflaeche entsteht jetzt vor der Datenbank, nicht danach.
+    #
+    # Vorher lief die Reihenfolge Datenbank - Sprache - Altbestand - und erst
+    # dann QApplication. Bis dahin stand nichts auf dem Bildschirm: Beim
+    # ersten Start legt die Datenbank ihr Schema an und uebernimmt den alten
+    # Kontaktmanager-Bestand, und wer in dieser Zeit nichts sieht, klickt ein
+    # zweites Mal. Die QApplication selbst braucht keine Datenbank, nur
+    # umgekehrt - also darf sie zuerst kommen und die Wartezeit zeigen.
     from PySide6.QtWidgets import QApplication
 
-    from freizeitmanager.ui.main_window import MainWindow
+    from freizeitmanager.i18n.translator import load_language_from_settings
+    from freizeitmanager.ui.branding import app_icon
+    from freizeitmanager.ui.startup_splash import StartupSplash
 
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setApplicationVersion(APP_VERSION)
-    window = MainWindow()
-    window.show()
+    app.setWindowIcon(app_icon())
+
+    splash = StartupSplash.start(app)
+    try:
+        db.initialize_database()
+        load_language_from_settings()
+        _import_legacy_once()
+        bridge.emit_event("module.started", {"version": APP_VERSION})
+
+        from freizeitmanager.ui.main_window import MainWindow
+
+        window = MainWindow()
+        window.show()
+        splash.finish(window)
+    finally:
+        # finish() hat den Splash im Regelfall schon geschlossen. Dieser
+        # Aufruf faengt den Abbruch davor ab - eine fehlgeschlagene Migration,
+        # ein unlesbarer Altbestand. Bliebe der Splash stehen, saehe der
+        # Nutzer ein Bild ohne Programm dahinter, und bis der Watchdog
+        # zuschlaegt vergehen dreissig Sekunden. close_active ist genau dafuer
+        # mehrfach aufrufbar und braucht keine Referenz.
+        StartupSplash.close_active()
+
     try:
         return app.exec()
     finally:

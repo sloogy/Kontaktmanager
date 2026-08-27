@@ -122,8 +122,33 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        logo = QLabel(APP_NAME)
-        logo.setObjectName("sidebarLogo")
+        # Marken-Flaeche der Seitenleiste. Bisher stand hier der Programmname
+        # als fette Textzeile; das Banner traegt ihn als Bild.
+        #
+        # Die Breite kommt aus styles.py und nicht aus einer Zahl an dieser
+        # Stelle: Sie muss zur Mindestbreite der Leiste und zum Innenabstand
+        # des Stylesheets passen, und beide wachsen mit der eingestellten
+        # Schriftgroesse. Eine hier geschaetzte Zahl waere in der grossen
+        # Fassung zu klein und in der kleinen zu breit.
+        #
+        # Welche Bannerfassung erscheint, entscheidet ui.branding anhand der
+        # Farbe genau dieser Flaeche: Der Schriftzug ist zur Haelfte
+        # dunkelblau, und die Seitenleisten der dunklen Profile gehen bis
+        # #050505.
+        from freizeitmanager.ui.branding import logo_label
+        from freizeitmanager.ui.styles import sidebar_logo_breite
+
+        logo = logo_label(
+            sidebar,
+            sidebar_logo_breite(),
+            farbschluessel="hintergrund_seitenleiste",
+            objektname="sidebarLogo",
+        )
+        if logo is None:
+            # Ohne Bilddatei bleibt die alte Textzeile stehen. Ein leeres
+            # Label an dieser Stelle waere ein Loch ueber der Navigation.
+            logo = QLabel(APP_NAME)
+            logo.setObjectName("sidebarLogo")
         layout.addWidget(logo)
 
         self._nav_buttons: dict[str, QPushButton] = {}

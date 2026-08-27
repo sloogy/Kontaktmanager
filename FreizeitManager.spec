@@ -16,9 +16,16 @@ Nutzerdaten liegen bewusst ausserhalb des Programmordners. Portable Starts
 setzen FREIZEITMANAGER_DATA_DIR bzw. legen portable.flag daneben.
 """
 
+import sys
 from pathlib import Path
 
 ROOT = Path(SPECPATH)
+
+# Die .ico braucht nur Windows. Auf Linux darf der Build daran nicht
+# scheitern, wenn die Werkzeugkette sie nicht verarbeiten kann - dieselbe
+# Fallunterscheidung wie in FPM.spec.
+icon_path = str(ROOT / "freizeitmanager" / "resources" / "icons" / "freizeitmanager.ico") \
+    if sys.platform.startswith("win") else None
 
 # Die Sprachdateien MUESSEN mit ins Paket: translator.py laedt sie zur
 # Laufzeit ueber den Dateipfad. Fehlen sie, zeigt die gebaute Anwendung
@@ -39,6 +46,18 @@ datas = [
     (str(ROOT / "docs" / "help" / "index.html"), "docs/help"),
     (str(ROOT / "README.md"), "."),
     (str(ROOT / "CHANGELOG.md"), "."),
+    # Markenbilder. Sie werden zur Laufzeit ueber den Dateipfad geladen
+    # (freizeitmanager/branding.py), nicht importiert - PyInstaller findet
+    # sie also nicht von selbst. Fehlen sie, startet das Programm ohne
+    # Fenstersymbol, ohne Startbildschirm und mit einer Textzeile statt des
+    # Banners in der Seitenleiste.
+    #
+    # Die beiden -source-Dateien bleiben aussen vor: Sie sind nur das
+    # Ausgangsmaterial fuer tools/create_icons.py und wuerden das Paket um
+    # rund 800 kB vergroessern, ohne je gelesen zu werden.
+    *[(str(pfad), "freizeitmanager/resources/icons")
+      for pfad in sorted((ROOT / "freizeitmanager" / "resources" / "icons").iterdir())
+      if pfad.suffix in {".png", ".ico"} and not pfad.stem.endswith("-source")],
 ]
 
 hiddenimports = [
@@ -95,6 +114,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=icon_path,
 )
 
 coll = COLLECT(
