@@ -1,4 +1,4 @@
-# FreizeitManager 0.2.2 – Handbuch
+# FreizeitManager 0.2.3 – Handbuch
 
 Der FreizeitManager hilft dabei, Beziehungen zu pflegen, ohne daraus eine
 Pflichtenliste zu machen. Er merkt sich, wer wie wichtig ist und in welchem
