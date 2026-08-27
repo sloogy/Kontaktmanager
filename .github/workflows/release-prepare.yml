@@ -27,6 +27,15 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Abhaengigkeiten installieren
+        # Bis hierhin lief dieser Job ohne Abhaengigkeiten - er setzte nur
+        # eine Zahl in zwei Dateien. Seit er auch das Handbuch neu baut,
+        # braucht er PySide6: build_handbook.py liest die Hilfethemen aus
+        # freizeitmanager/ui/help_dialog.py, und das Modul importiert Qt.
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
       - name: Version aus Release-Branch übernehmen
         shell: bash
         run: |
