@@ -2,7 +2,7 @@
   "schema": "lifeplanner.module.v2",
   "id": "freizeitmanager",
   "name": "FreizeitManager",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Freundschaftspflege, Kontaktrotation, Aktivitaeten und Freizeitplanung.",
   "requires_host": ">=0.5.15,<1.0",
   "source_entry": "main.py",
