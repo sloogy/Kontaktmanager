@@ -51,6 +51,13 @@ jobs:
           PY
           python tools/sync_version.py
           python tools/sync_version.py --check
+          # Das Handbuch traegt die Programmversion in seiner Ueberschrift.
+          # Hier stand es nicht, und tests/test_help.py prueft im Releaselauf,
+          # ob es zur Hilfe passt: Der Versionssprung in der Zeile darueber
+          # machte es damit in genau dem Moment veraltet, in dem niemand mehr
+          # eingreifen kann. v0.2.3 ist daran gestorben.
+          python tools/build_handbook.py
+          python tools/build_handbook.py --check
 
       - name: Synchronisierten Release-Commit erzeugen
         shell: bash

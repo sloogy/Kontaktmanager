@@ -1,12 +1,25 @@
 # Changelog
 
-## 0.2.3 — 27. August 2026
+## 0.2.4 — 27. August 2026
+
+**0.2.3 wurde nie ausgeliefert.** Version, Notizen und Tag standen bereits,
+als der Release-Bau abbrach: Das Handbuch trägt die Programmversion in seiner
+Überschrift, und der Release-Vorlauf hob die Version, ohne es neu zu bauen —
+also war es in genau dem Moment veraltet, in dem niemand mehr eingreifen
+kann. Ein Tag wird nicht verschoben, deshalb bekommt dieselbe Arbeit die
+Nummer 0.2.4. Für 0.2.3 gibt es keine Downloads, weil es sie nie gab.
+
+Der Inhalt des 0.2.3-Blocks steht unverändert hier, ergänzt um die Korrektur
+am Release-Vorlauf: Er baut das Handbuch jetzt nach dem Versionssprung neu
+und prüft das Ergebnis.
+
+### Was für 0.2.3 vorgesehen war und jetzt ausgeliefert wird
 
 Der FreizeitManager trat als einziges der vier Programme ohne ein einziges
 Bild auf. Das ist jetzt behoben — und mit demselben Motiv wie die
 Schwesterprogramme.
 
-### Die Marke ist da, wo man sie zuerst sieht
+#### Die Marke ist da, wo man sie zuerst sieht
 
 - **Das Fenster trägt jetzt ein eigenes Programmsymbol** statt des grauen
   Ersatzsymbols des Fenstermanagers — in Titelleiste, Taskleiste und
@@ -23,7 +36,7 @@ Schwesterprogramme.
   dieser Fläche — nicht anhand des Hell/Dunkel-Kennzeichens des Profils, denn
   die Seitenleiste ist eine eigene Farbe.
 
-### Der Start zeigt nicht mehr minutenlang nichts
+#### Der Start zeigt nicht mehr minutenlang nichts
 
 Beim ersten Start legt die Datenbank ihr Schema an und übernimmt den alten
 Kontaktmanager-Bestand. Bis zum Hauptfenster stand dabei nichts auf dem
@@ -33,7 +46,7 @@ Jetzt erscheint sofort ein Startbildschirm mit dem Logo. Er weicht jedem
 Hinweis aus, den der Start zeigen will, und verschwindet mit dem
 Hauptfenster; bricht der Start vorher ab, verschwindet er ebenfalls.
 
-### Für Mitentwickelnde
+#### Für Mitentwickelnde
 
 - `tools/create_icons.py` leitet alle Größen, die `.ico` und beide
   Bannerfassungen aus zwei unskalierten Quellbildern ab. Die Quellbilder der
