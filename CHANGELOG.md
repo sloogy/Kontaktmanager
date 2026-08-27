@@ -1,5 +1,53 @@
 # Changelog
 
+## 0.2.3 — 27. August 2026
+
+Der FreizeitManager trat als einziges der vier Programme ohne ein einziges
+Bild auf. Das ist jetzt behoben — und mit demselben Motiv wie die
+Schwesterprogramme.
+
+### Die Marke ist da, wo man sie zuerst sieht
+
+- **Das Fenster trägt jetzt ein eigenes Programmsymbol** statt des grauen
+  Ersatzsymbols des Fenstermanagers — in Titelleiste, Taskleiste und
+  Alt-Tab, jeweils in der passenden Größe.
+- **In der Seitenleiste steht das Logo als Bild** statt einer fett gesetzten
+  Textzeile. Es passt sich der Breite der Leiste an; bei großer
+  Schrifteinstellung wächst es mit.
+- **Der Über-Dialog zeigt das quadratische Programmsymbol** statt des
+  Standardsymbols von Qt.
+- **Auf dunklen Designprofilen bleibt der ganze Schriftzug lesbar.** Er ist
+  zur Hälfte dunkelblau; die Seitenleisten der dunklen Profile gehen bis
+  `#050505`. Für solche Flächen gibt es eine eigene, helle Fassung des
+  Logos. Welche erscheint, entscheidet die Anwendung anhand der Farbe genau
+  dieser Fläche — nicht anhand des Hell/Dunkel-Kennzeichens des Profils, denn
+  die Seitenleiste ist eine eigene Farbe.
+
+### Der Start zeigt nicht mehr minutenlang nichts
+
+Beim ersten Start legt die Datenbank ihr Schema an und übernimmt den alten
+Kontaktmanager-Bestand. Bis zum Hauptfenster stand dabei nichts auf dem
+Bildschirm — wer nichts sieht, klickt ein zweites Mal.
+
+Jetzt erscheint sofort ein Startbildschirm mit dem Logo. Er weicht jedem
+Hinweis aus, den der Start zeigen will, und verschwindet mit dem
+Hauptfenster; bricht der Start vorher ab, verschwindet er ebenfalls.
+
+### Für Mitentwickelnde
+
+- `tools/create_icons.py` leitet alle Größen, die `.ico` und beide
+  Bannerfassungen aus zwei unskalierten Quellbildern ab. Die Quellbilder der
+  Bildmappe tragen ungleiche unsichtbare Ränder und einen Alphaschleier von
+  1 bis 3, der jede Randmessung gegen Null wertlos macht — beides ist im
+  Werkzeug und in `docs/MARKENBILDER.md` festgehalten.
+- Die Breite des Banners in der Seitenleiste kommt aus `ui/styles.py` und
+  nicht aus einer Zahl im Hauptfenster: Sie muss zur Mindestbreite der Leiste
+  und zum Innenabstand des Stylesheets passen, und beide wachsen mit der
+  Schriftgröße.
+- `main.py --smoke` meldet fehlende Markenbilder im gebauten Paket jetzt als
+  Fehler. Sie werden über den Dateipfad geladen und nicht importiert;
+  PyInstaller findet sie nur, weil die `.spec` sie aufführt.
+
 ## 0.2.2 — 23. August 2026
 
 Der Prüf-Wrapper fehlte als einzigem der vier, und die Hostgrenze des Moduls
