@@ -130,31 +130,114 @@ def _bildpunktverhaeltnis(widget: QWidget | None) -> float:
         return 1.0
 
 
+class BannerLabel(QLabel):
+    """Ein Banner, das sich seiner Flaeche anpasst, statt beschnitten zu werden.
+
+    Ein gewoehnliches ``QLabel`` mit Bild zeichnet das Bild in voller Groesse
+    und schneidet ab, was nicht hineinpasst. Genau das passiert in einer
+    vollen Seitenleiste: Reicht die Hoehe des Fensters nicht fuer alle
+    Eintraege, verteilt das Layout den Mangel auf alle Kinder, und vom Banner
+    bleibt ein Streifen. Eine feste Groessenrichtlinie hilft dabei nicht -
+    wenn die Summe der Mindestgroessen die Flaeche uebersteigt, geht das
+    Layout auch unter jede Mindestgroesse.
+
+    Deshalb behaelt dieses Label das unskalierte Bild und rechnet es bei
+    jeder Groessenaenderung neu in die tatsaechlich verfuegbare Flaeche.
+    Kleiner ist es dann - aber ganz.
+
+    ``minimumSizeHint`` meldet dieselbe Hoehe wie ``sizeHint``. Ein kleinerer
+    Mindestwert klaenge nachgiebiger, waere hier aber falsch: Der Innenabstand
+    aus dem Stylesheet ist fest, und sobald die zugeteilte Hoehe darunter
+    faellt, bleibt fuer das Bild rechnerisch nichts uebrig. Lieber nimmt das
+    Layout den Platz woanders weg.
+    """
+
+    def __init__(
+        self,
+        quelle: QPixmap,
+        breite: int,
+        *,
+        parent: QWidget | None = None,
+        device_pixel_ratio: float = 1.0,
+    ) -> None:
+        super().__init__(parent)
+        self._quelle = quelle
+        self._breite = max(1, int(breite))
+        self._verhaeltnis = float(device_pixel_ratio) or 1.0
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self._neu_zeichnen(self._breite, self._hoehe_zu(self._breite))
+
+    def _hoehe_zu(self, breite: int) -> int:
+        if self._quelle.width() <= 0:
+            return 1
+        return max(1, round(breite * self._quelle.height() / self._quelle.width()))
+
+    def _rahmen(self) -> tuple[int, int]:
+        """Innenmasse: Groesse abzueglich der Raender aus dem Stylesheet."""
+        rand = self.contentsMargins()
+        return (
+            self.width() - rand.left() - rand.right(),
+            self.height() - rand.top() - rand.bottom(),
+        )
+
+    def _neu_zeichnen(self, breite: int, hoehe: int) -> None:
+        breite = max(1, min(breite, self._breite))
+        hoehe = max(1, hoehe)
+        # In die Flaeche einpassen: Die knappere der beiden Kanten entscheidet.
+        if breite * self._quelle.height() > hoehe * self._quelle.width():
+            breite = max(1, round(hoehe * self._quelle.width() / self._quelle.height()))
+        ziel = max(1, round(breite * self._verhaeltnis))
+        bild = self._quelle.scaledToWidth(
+            ziel, Qt.TransformationMode.SmoothTransformation
+        )
+        bild.setDevicePixelRatio(self._verhaeltnis)
+        self.setPixmap(bild)
+
+    def sizeHint(self):
+        rand = self.contentsMargins()
+        masse = super().sizeHint()
+        masse.setWidth(self._breite + rand.left() + rand.right())
+        masse.setHeight(self._hoehe_zu(self._breite) + rand.top() + rand.bottom())
+        return masse
+
+    def minimumSizeHint(self):
+        return self.sizeHint()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        breite, hoehe = self._rahmen()
+        # Beide Masse werden in _neu_zeichnen auf mindestens 1 gehoben. Hier
+        # nicht abzubrechen ist Absicht: Bleibt nach dem Innenabstand nichts
+        # uebrig, soll ein winziges Banner erscheinen und kein angeschnittenes.
+        self._neu_zeichnen(breite, hoehe)
+
+
 def logo_label(
     parent: QWidget | None,
     breite: int,
     *,
     farbschluessel: str = STANDARD_FLAECHE,
     objektname: str = "",
-) -> QLabel | None:
+) -> BannerLabel | None:
     """Fertiges, zentriertes Banner-Label - oder ``None`` ohne Bild.
 
     Gibt bewusst ``None`` zurueck statt eines leeren Labels: eine
     Marken-Flaeche ohne Bild soll im Layout gar keinen Platz belegen.
     """
-    bild = logo_pixmap(
+    quelle = _geladen(
+        branding.logo_pfad(fuer_dunklen_untergrund=flaeche_ist_dunkel(farbschluessel))
+    )
+    if quelle is None:
+        return None
+    label = BannerLabel(
+        quelle,
         breite,
-        farbschluessel=farbschluessel,
+        parent=parent,
         device_pixel_ratio=_bildpunktverhaeltnis(parent),
     )
-    if bild is None:
-        return None
-    label = QLabel(parent)
     if objektname:
         label.setObjectName(objektname)
-    label.setPixmap(bild)
-    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
     # Das Banner traegt den Programmnamen bereits als Bild; fuer Screenreader
     # wird er hier noch einmal ausgesprochen.
     label.setAccessibleName("FreizeitManager")
@@ -164,6 +247,7 @@ def logo_label(
 __all__ = [
     "HELLIGKEITS_GRENZE",
     "STANDARD_FLAECHE",
+    "BannerLabel",
     "app_icon",
     "flaeche_ist_dunkel",
     "icon_pixmap",

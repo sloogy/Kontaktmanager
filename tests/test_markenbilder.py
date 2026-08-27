@@ -265,6 +265,37 @@ def test_seitenleisten_banner_passt_in_die_schmalste_leiste(qapp, session):
         ThemeManager.reset()
 
 
+def test_das_banner_wird_kleiner_statt_beschnitten(qapp, session):
+    """In einer engen Flaeche muss das ganze Wort lesbar bleiben.
+
+    Ein gewoehnliches QLabel zeichnet sein Bild in voller Groesse und
+    schneidet ab, was nicht hineinpasst. Reicht die Fensterhoehe nicht fuer
+    alle Eintraege der Seitenleiste, verteilt das Layout den Mangel auf alle
+    Kinder - vom Banner bliebe ein Streifen. BannerLabel rechnet neu.
+    """
+    from freizeitmanager.ui.branding import logo_label
+
+    label = logo_label(None, 200)
+    assert label is not None
+    label.show()
+    qapp.processEvents()
+    voll = label.pixmap().height()
+    assert voll > 0
+
+    # show() vor resize(): Ein verstecktes Widget merkt sich die neue
+    # Groesse und stellt das Ereignis bis zum Anzeigen zurueck - der Test
+    # pruefte sonst den Zustand vor der Aenderung.
+    label.resize(200, max(4, voll // 3))
+    qapp.processEvents()
+    schmal = label.pixmap()
+    assert schmal.height() <= label.height(), "Das Bild ragt aus seiner Flaeche"
+    assert schmal.width() < 200, "Es wurde nicht schmaler, also beschnitten"
+    # Das Seitenverhaeltnis darf dabei nicht kippen.
+    assert abs(schmal.width() / schmal.height() - 200 / voll) < 0.2
+    label.close()
+    label.deleteLater()
+
+
 def test_seitenleiste_zeigt_das_banner_statt_einer_textzeile(qapp, session):
     from PySide6.QtWidgets import QLabel
 
